@@ -28,3 +28,5 @@ docker-stop: ## Stop Docker container
 
 docker-logs: ## View Docker logs
 	docker compose logs -f
+
+.DEFAULT_GOAL := help
