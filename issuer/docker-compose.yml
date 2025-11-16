@@ -1,0 +1,22 @@
+services:
+  testa-gava:
+    build: .
+    container_name: testa-gava
+    ports:
+      - "8080:8080"
+    environment:
+      - WALTID_ISSUER_URL=http://139.59.15.151:7002/openid4vc/sdjwt/issue
+      - PORT=8080
+    restart: unless-stopped
+    networks:
+      - testa-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+networks:
+  testa-network:
+    driver: bridge
