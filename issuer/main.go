@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// Get configuration from environment
-	port := getEnv("PORT", "8080")
+	port := getEnv("PORT", "8082")
 	waltIDURL := getEnv("WALTID_ISSUER_URL", "http://139.59.15.151:7002/openid4vc/sdjwt/issue")
 
 	// Initialize handlers with configuration

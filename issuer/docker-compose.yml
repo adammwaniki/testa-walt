@@ -3,10 +3,10 @@ services:
     build: .
     container_name: testa-gava
     ports:
-      - "8080:8080"
+      - "8082:8082"
     environment:
       - WALTID_ISSUER_URL=http://139.59.15.151:7002/openid4vc/sdjwt/issue
-      - PORT=8080
+      - PORT=8082
     restart: unless-stopped
     networks:
       - testa-network
