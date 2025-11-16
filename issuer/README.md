@@ -49,7 +49,7 @@ cd issuer
 # 2. Run the server
 go run main.go
 
-# 3. Visit http://localhost:8080
+# 3. Visit http://localhost:8082
 ```
 
 ### Form Sections
@@ -95,7 +95,7 @@ Environment variables:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `WALTID_ISSUER_URL` | `http://droplet_ip:7002/openid4vc/sdjwt/issue` | Walt.id issuer endpoint |
-| `PORT` | `8080` | Server port |
+| `PORT` | `8082` | Server port |
 
 ### Architecture
 
@@ -160,7 +160,7 @@ Edit `static/styles.css` - form styles are clearly marked
 # Start server
 go run main.go
 
-# Fill form at http://localhost:8080
+# Fill form at http://localhost:8082
 # Click "Issue Digital ID Credential"
 # Copy the generated credential link
 ```
