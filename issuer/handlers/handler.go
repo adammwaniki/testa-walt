@@ -404,7 +404,9 @@ func (h *Handler) renderSuccess(w http.ResponseWriter, credentialLink string, fa
 	w.Header().Set("Content-Type", "text/html")
 	html := fmt.Sprintf(`
 		<div id="result" class="success-message">
-			<div class="success-icon">✓</div>
+			<div class="success-icon">
+				<i class="fa-solid fa-check" style="color: #28a745;"></i>
+			</div>
 			<h3>Digital ID Credential Generated!</h3>
 			<p>Credential issued for: <strong>%s %s</strong></p>
 			
