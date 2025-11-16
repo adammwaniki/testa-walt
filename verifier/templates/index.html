@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testa SACCO - Credential Verification</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <span class="logo-icon">
+                    <i class="fa-solid fa-money-bill-wheat fa-bounce" style="color: #08e717;"></i>
+                </span>
+                <h1>Testa SACCO</h1>
+                <span class="logo-icon">
+                    <i class="fa-solid fa-money-bill-wheat fa-bounce" style="color: #08e717;"></i>
+                </span>
+            </div>
+            <p class="tagline">Verifying Digital Credentials</p>
+        </header>
+
+        <main>
+            <section class="intro-section">
+                <h2>Welcome to Testa SACCO</h2>
+                <p class="intro-text">
+                    Open an Account with Testa SACCO today!
+                </p>
+                <p class="intro-text">
+                    Now Accepting Digital Verifiable Credentials so You can join us from the comfort of your home. 
+                </p>
+            </section>
+
+            <section class="benefits-section">
+                <h3>Why Verifiable Credentials?</h3>
+                <p class="explanatory-text">
+                    In line with regulatory requirements all financial institutions must comply with Know Your Customer (KYC) and Anti Money Laundering (AML) laws.
+                </p>
+                <p class="explanatory-text">
+                    With Digital Verfiable Credentials you can verify your identity with ease from wherever you are!
+                </p>
+                <p class="explanatory-text">
+                    Want to know the best part?
+                </p>
+                <p class="explanatory-text">
+                    YOU control your own data with selective disclosure!
+                </p>
+                <div class="benefits-grid">
+                    <div class="benefit-card">
+                        <h4>Secure</h4>
+                        <p>Cryptographic verification of credential authenticity</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h4>Trustworthy</h4>
+                        <p>Verify credentials from trusted issuers</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h4>Selective</h4>
+                        <p>Request only the information you need</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h4>Fast</h4>
+                        <p>Instant verification with real-time results</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <form 
+                    id="verification-form"
+                    hx-post="/verify-credential"
+                    hx-target="#result"
+                    hx-swap="innerHTML"
+                    hx-indicator="#loading"
+                >
+                    <div class="form-group-header">
+                        <h3>Verification Configuration</h3>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="credentialType">Credential Type to Verify</label>
+                            <select id="credentialType" name="credentialType">
+                                <option value="VerifiablePortableDocumentA1">Verifiable Portable Document A1 (Default)</option>
+                                <option value="VerifiableAttestation">Verifiable Attestation</option>
+                                <option value="UniversityDegreeCredential">University Degree</option>
+                                <option value="PermanentResidentCard">Permanent Resident Card</option>
+                                <option value="OpenBadgeCredential">Open Badge</option>
+                            </select>
+                            <small class="help-text">Select the type of credential you want to verify</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">
+                            Generate Verification Request
+                        </button>
+                    </div>
+
+                    <div id="loading" class="htmx-indicator">
+                        <div class="spinner"></div>
+                        <p>Generating verification request...</p>
+                    </div>
+                </form>
+
+                <div id="result"></div>
+            </section>
+
+            <section class="how-it-works">
+                <h3>How Verification Works</h3>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h4>Configure</h4>
+                        <p>Select credential type and verification policies</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h4>Generate Request</h4>
+                        <p>Create a verification link</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h4>Share Link</h4>
+                        <p>Send to credential holder</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h4>Verify</h4>
+                        <p>Holder presents credential and you verify</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="info-section">
+                <h3>About OpenID4VP Verification</h3>
+                <p>
+                    Testa SACCO uses the OpenID for Verifiable Presentations (OpenID4VP) protocol to verify credentials. 
+                    This ensures:
+                </p>
+                <ul class="feature-list">
+                    <li><strong>Privacy:</strong> Holders control what information they share</li>
+                    <li><strong>Security:</strong> Cryptographic proof prevents forgery</li>
+                    <li><strong>Standardization:</strong> Works with any W3C-compliant wallet</li>
+                    <li><strong>Selective Disclosure:</strong> Request only necessary information</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Testa SACCO. Powered by W3C Verifiable Credentials & OpenID4VP.</p>
+        </footer>
+    </div>
+</body>
+</html>

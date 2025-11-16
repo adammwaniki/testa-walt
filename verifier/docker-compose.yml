@@ -1,0 +1,22 @@
+services:
+  testa-sacco:
+    build: .
+    container_name: testa-sacco
+    ports:
+      - "8081:8081"
+    environment:
+      - WALTID_VERIFIER_URL=http://139.59.15.151:7003/openid4vc/verify
+      - PORT=8081
+    restart: unless-stopped
+    networks:
+      - testa-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+networks:
+  testa-network:
+    driver: bridge
