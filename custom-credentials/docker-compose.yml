@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  farmer-credential-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: farmer-credential-service
+    ports:
+      - "7105:7105"
+    environment:
+      - PORT=7105
+      - HOST=0.0.0.0
+      # Walt.id configuration (already hardcoded in the app, but can be overridden)
+      # - WALTID_BASE_URL=http://139.59.15.151:7002
+    restart: unless-stopped
+    networks:
+      - farmer-net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7105/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  farmer-net:
+    driver: bridge
