@@ -1,0 +1,1186 @@
+{
+  "info": {
+    "name": "Walt.id Workflow (Signup - Issuance - Acceptance - Verification)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "An automated workflow for testing walt.id issuance and verification of W3C Verifiable Credentials. This collection includes user signup, automatically populates variables, and includes pre/post request scripts to handle the entire flow with minimal user intervention."
+  },
+  "item": [
+    {
+      "name": "1. Full Issuance Workflow",
+      "description": "Complete workflow for issuing a verifiable credential, starting with user registration",
+      "item": [
+        {
+          "name": "1.0 Generate Credential Offer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse the response and extract the credential offer URL",
+                  "var responseBody = pm.response.text();",
+                  "",
+                  "// Save the full credential offer URL",
+                  "pm.collectionVariables.set(\"credential_offer_url\", responseBody);",
+                  "",
+                  "// Extract the credential offer ID for later reference",
+                  "var offerIdMatch = responseBody.match(/credentialOffer%3Fid%3D([^&]*)/);",
+                  "if (offerIdMatch && offerIdMatch.length > 1) {",
+                  "    pm.collectionVariables.set(\"credential_offer_id\", offerIdMatch[1]);",
+                  "    console.log(\"Extracted credential offer ID: \" + offerIdMatch[1]);",
+                  "}",
+                  "",
+                  "console.log(\"Credential offer URL saved: \" + responseBody);",
+                  "pm.test(\"Credential offer URL generated successfully\", function() {",
+                  "    pm.response.to.not.be.error;",
+                  "    pm.expect(responseBody).to.include('openid-credential-offer');",
+                  "});",
+                  "",
+                  "// Set a flag to indicate we can proceed to the next step",
+                  "pm.collectionVariables.set(\"issuance_step\", \"offer_generated\");"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Set dynamic values in the request",
+                  "const timestamp = new Date().toISOString();",
+                  "const uuid = pm.variables.replaceIn('{{$guid}}');",
+                  "",
+                  "// Update the request body with dynamic values",
+                  "var body = JSON.parse(pm.request.body.raw);",
+                  "body.credentialData.id = `urn:uuid:${uuid}`;",
+                  "body.credentialData.issuanceDate = timestamp;",
+                  "pm.request.body.raw = JSON.stringify(body, null, 2);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "text/plain"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerKey\": {\n    \"type\": \"jwk\",\n    \"jwk\": {\n      \"kty\": \"OKP\",\n      \"d\": \"mDhpwaH6JYSrD2Bq7Cs-pzmsjlLj4EOhxyI-9DM1mFI\",\n      \"crv\": \"Ed25519\",\n      \"kid\": \"Vzx7l5fh56F3Pf9aR3DECU5BwfrY6ZJe05aiWYWzan8\",\n      \"x\": \"T3T4-u1Xz3vAV2JwPNxWfs4pik_JLiArz_WTCvrCFUM\"\n    }\n  },\n  \"issuerDid\": \"did:key:z6MkjoRhq1jSNJdLiruSXrFFxagqrztZaXHqHGUTKJbcNywp\",\n  \"credentialConfigurationId\": \"OpenBadgeCredential_jwt_vc_json\",\n  \"credentialData\": {\n    \"@context\": [\n      \"https://www.w3.org/2018/credentials/v1\",\n      \"https://purl.imsglobal.org/spec/ob/v3p0/context.json\"\n    ],\n    \"id\": \"urn:uuid:THIS WILL BE REPLACED WITH DYNAMIC DATA FUNCTION\",\n    \"type\": [\n      \"VerifiableCredential\",\n      \"OpenBadgeCredential\"\n    ],\n    \"name\": \"JFF x vc-edu PlugFest 3 Interoperability\",\n    \"issuer\": {\n      \"type\": [\n        \"Profile\"\n      ],\n      \"id\": \"did:key:z6MkjoRhq1jSNJdLiruSXrFFxagqrztZaXHqHGUTKJbcNywp\",\n      \"name\": \"Jobs for the Future (JFF)\",\n      \"url\": \"https://www.jff.org/\",\n      \"image\": \"https://w3c-ccg.github.io/vc-ed/plugfest-1-2022/images/JFF_LogoLockup.png\"\n    },\n    \"issuanceDate\": \"AUTO_GENERATED\",\n    \"credentialSubject\": {\n      \"id\": \"PLACEHOLDER_FOR_RECIPIENT_DID\",\n      \"type\": [\n        \"AchievementSubject\"\n      ],\n      \"achievement\": {\n        \"id\": \"urn:uuid:ac254bd5-8fad-4bb1-9d29-efd938536926\",\n        \"type\": [\n          \"Achievement\"\n        ],\n        \"name\": \"JFF x vc-edu PlugFest 3 Interoperability\",\n        \"description\": \"This wallet supports the use of W3C Verifiable Credentials and has demonstrated interoperability during the presentation request workflow during JFF x VC-EDU PlugFest 3.\",\n        \"criteria\": {\n          \"type\": \"Criteria\",\n          \"narrative\": \"Wallet solutions providers earned this badge by demonstrating interoperability during the presentation request workflow. This includes successfully receiving a presentation request, allowing the holder to select at least two types of verifiable credentials to create a verifiable presentation, returning the presentation to the requestor, and passing verification of the presentation and the included credentials.\"\n        },\n        \"image\": {\n          \"id\": \"https://w3c-ccg.github.io/vc-ed/plugfest-3-2023/images/JFF-VC-EDU-PLUGFEST3-badge-image.png\",\n          \"type\": \"Image\"\n        }\n      }\n    }\n  },\n  \"mapping\": {\n    \"id\": \"<uuid>\",\n    \"issuer\": {\n      \"id\": \"<issuerDid>\"\n    },\n    \"credentialSubject\": {\n      \"id\": \"<subjectDid>\"\n    },\n    \"issuanceDate\": \"<timestamp>\",\n    \"expirationDate\": \"<timestamp-in:365d>\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{issuer_host}}/openid4vc/jwt/issue",
+              "protocol": "http",
+              "host": [
+                "{{issuer_host}}"
+              ],
+              "path": [
+                "openid4vc",
+                "jwt",
+                "issue"
+              ]
+            },
+            "description": "Generate a credential offer URL that will be used to issue a verifiable credential"
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Register New User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "// Check if registration was successful",
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    console.log(\"User registration successful\");",
+                  "    ",
+                  "    // Store registration details for verification",
+                  "    pm.collectionVariables.set(\"registration_completed\", \"true\");",
+                  "    ",
+                  "    pm.test(\"User registered successfully\", function() {",
+                  "        pm.response.to.have.status([200, 201]);",
+                  "    });",
+                  "    ",
+                  "    // Set a flag to indicate we can proceed to login",
+                  "    pm.collectionVariables.set(\"issuance_step\", \"user_registered\");",
+                  "} else if (pm.response.code === 409) {",
+                  "    console.log(\"User already exists, proceeding to login\");",
+                  "    pm.collectionVariables.set(\"registration_completed\", \"true\");",
+                  "    pm.collectionVariables.set(\"issuance_step\", \"user_registered\");",
+                  "    ",
+                  "    pm.test(\"User already exists (proceeding to login)\", function() {",
+                  "        pm.response.to.have.status(409);",
+                  "    });",
+                  "} else {",
+                  "    console.log(\"Registration failed with status: \" + pm.response.code);",
+                  "    pm.test(\"User registration failed\", function() {",
+                  "        pm.expect.fail(\"Registration failed with status: \" + pm.response.code);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Validate that email and password are set",
+                  "const email = pm.collectionVariables.get(\"new_user_email\");",
+                  "const password = pm.collectionVariables.get(\"new_user_password\");",
+                  "const name = pm.collectionVariables.get(\"new_user_name\");",
+                  "",
+                  "if (!email || !password || !name) {",
+                  "    console.log(\"Warning: User credentials not fully set. Using defaults.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"email\",\n  \"name\": \"{{new_user_name}}\",\n  \"email\": \"{{new_user_email}}\",\n  \"password\": \"{{new_user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{wallet_host}}/wallet-api/auth/register",
+              "protocol": "http",
+              "host": [
+                "{{wallet_host}}"
+              ],
+              "path": [
+                "wallet-api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Register a new user account in the wallet system using /auth/register endpoint before proceeding with credential issuance"
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Login to Wallet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "// Store the auth token and account ID",
+                  "pm.collectionVariables.set(\"auth_token\", jsonData.token);",
+                  "pm.collectionVariables.set(\"account_id\", jsonData.id);",
+                  "console.log(\"Logged in with account ID: \" + jsonData.id);",
+                  "",
+                  "pm.test(\"Login successful\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(jsonData.token).to.exist;",
+                  "});",
+                  "",
+                  "// Set a flag to indicate successful login",
+                  "pm.collectionVariables.set(\"issuance_step\", \"logged_in\");"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if user registration was completed",
+                  "const registrationStatus = pm.collectionVariables.get(\"issuance_step\");",
+                  "if (registrationStatus !== \"user_registered\") {",
+                  "    console.log(\"Warning: User may not be registered yet. Login might fail.\");",
+                  "}",
+                  "",
+                  "// Use the new user credentials for login",
+                  "const email = pm.collectionVariables.get(\"new_user_email\");",
+                  "const password = pm.collectionVariables.get(\"new_user_password\");",
+                  "",
+                  "if (email && password) {",
+                  "    console.log(\"Using new user credentials for login: \" + email);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"email\",\n  \"email\": \"{{new_user_email}}\",\n  \"password\": \"{{new_user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{wallet_host}}/wallet-api/auth/login",
+              "protocol": "http",
+              "host": [
+                "{{wallet_host}}"
+              ],
+              "path": [
+                "wallet-api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login to the wallet to get an authentication token"
+          },
+          "response": []
+        },
+        {
+          "name": "1.3 List Wallets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "// Store the first wallet ID",
+                  "if (jsonData.wallets && jsonData.wallets.length > 0) {",
+                  "    pm.collectionVariables.set(\"wallet_id\", jsonData.wallets[0].id);",
+                  "    console.log(\"Selected wallet ID: \" + jsonData.wallets[0].id);",
+                  "    ",
+                  "    pm.test(\"Wallet list retrieved successfully\", function() {",
+                  "        pm.expect(jsonData.wallets.length).to.be.above(0);",
+                  "    });",
+                  "    ",
+                  "    // Set a flag to indicate we have the wallet ID",
+                  "    pm.collectionVariables.set(\"issuance_step\", \"wallet_selected\");",
+                  "} else {",
+                  "    console.log(\"No wallets found for this account!\");",
+                  "    pm.test(\"No wallets found\", function() {",
+                  "        pm.expect.fail(\"No wallets available for this account\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if we're logged in before proceeding",
+                  "const loginStatus = pm.collectionVariables.get(\"issuance_step\");",
+                  "if (loginStatus !== \"logged_in\") {",
+                  "    console.log(\"Warning: Not logged in yet. This request may fail.\");",
+                  "}",
+                  "",
+                  "// Ensure we have a valid auth token",
+                  "const token = pm.collectionVariables.get(\"auth_token\");",
+                  "if (!token) {",
+                  "    console.log(\"Error: No authentication token available. Please login first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "application/json"
+              },
+              {
+                "key": "authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://{{wallet_host}}/wallet-api/wallet/accounts/wallets",
+              "protocol": "http",
+              "host": [
+                "{{wallet_host}}"
+              ],
+              "path": [
+                "wallet-api",
+                "wallet",
+                "accounts",
+                "wallets"
+              ]
+            },
+            "description": "Get a list of wallets associated with the authenticated user"
+          },
+          "response": []
+        },
+        {
+          "name": "1.4 Create DID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Store the DID from the response",
+                  "var responseBody = pm.response.text();",
+                  "if (responseBody) {",
+                  "    pm.collectionVariables.set(\"wallet_did\", responseBody);",
+                  "    ",
+                  "    // Also create a URL-encoded version for use in requests",
+                  "    const encodedDid = encodeURIComponent(responseBody);",
+                  "    pm.collectionVariables.set(\"wallet_did_encoded\", encodedDid);",
+                  "    ",
+                  "    console.log(\"Created DID: \" + responseBody);",
+                  "    console.log(\"URL-encoded DID: \" + encodedDid);",
+                  "    ",
+                  "    pm.test(\"DID created successfully\", function() {",
+                  "        pm.expect(responseBody).to.include('did:key:');",
+                  "    });",
+                  "    ",
+                  "    // Set a flag to indicate we have the DID",
+                  "    pm.collectionVariables.set(\"issuance_step\", \"did_created\");",
+                  "} else {",
+                  "    console.log(\"Failed to create DID!\");",
+                  "    pm.test(\"DID creation failed\", function() {",
+                  "        pm.expect.fail(\"No DID received in response\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if we have a wallet ID before proceeding",
+                  "const walletStatus = pm.collectionVariables.get(\"issuance_step\");",
+                  "if (walletStatus !== \"wallet_selected\") {",
+                  "    console.log(\"Warning: No wallet selected yet. This request may fail.\");",
+                  "}",
+                  "",
+                  "// Ensure we have a wallet ID",
+                  "const walletId = pm.collectionVariables.get(\"wallet_id\");",
+                  "if (!walletId) {",
+                  "    console.log(\"Error: No wallet ID available. Please list wallets first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://{{wallet_host}}/wallet-api/wallet/{{wallet_id}}/dids/create/key",
+              "protocol": "http",
+              "host": [
+                "{{wallet_host}}"
+              ],
+              "path": [
+                "wallet-api",
+                "wallet",
+                "{{wallet_id}}",
+                "dids",
+                "create",
+                "key"
+              ]
+            },
+            "description": "Create a new Decentralized Identifier (DID) for the wallet"
+          },
+          "response": []
+        },
+        {
+          "name": "1.5 Accept Credential Offer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "// Extract and store the credential ID",
+                  "if (jsonData && jsonData.length > 0 && jsonData[0].id) {",
+                  "    pm.collectionVariables.set(\"credential_id\", jsonData[0].id);",
+                  "    ",
+                  "    // Also store the full credential JWT if available",
+                  "    if (jsonData[0].document) {",
+                  "        pm.collectionVariables.set(\"credential_jwt\", jsonData[0].document);",
+                  "    }",
+                  "    ",
+                  "    console.log(\"Received credential with ID: \" + jsonData[0].id);",
+                  "    ",
+                  "    pm.test(\"Credential accepted successfully\", function() {",
+                  "        pm.expect(jsonData[0].id).to.include('urn:uuid:');",
+                  "    });",
+                  "    ",
+                  "    // Set a flag to indicate completion of issuance",
+                  "    pm.collectionVariables.set(\"issuance_step\", \"credential_received\");",
+                  "} else {",
+                  "    console.log(\"Failed to receive credential!\");",
+                  "    pm.test(\"Credential acceptance failed\", function() {",
+                  "        pm.expect.fail(\"No credential received in response\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if we have a DID and credential offer before proceeding",
+                  "const didStatus = pm.collectionVariables.get(\"issuance_step\");",
+                  "if (didStatus !== \"did_created\") {",
+                  "    console.log(\"Warning: No DID created yet. This request may fail.\");",
+                  "}",
+                  "",
+                  "// Ensure we have a credential offer URL",
+                  "const offerUrl = pm.collectionVariables.get(\"credential_offer_url\");",
+                  "if (!offerUrl) {",
+                  "    console.log(\"Error: No credential offer URL available. Please generate a credential offer first.\");",
+                  "}",
+                  "",
+                  "// Ensure we have a wallet DID",
+                  "const did = pm.collectionVariables.get(\"wallet_did\");",
+                  "if (!did) {",
+                  "    console.log(\"Error: No wallet DID available. Please create a DID first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              },
+              {
+                "key": "authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{credential_offer_url}}",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{wallet_host}}/wallet-api/wallet/{{wallet_id}}/exchange/useOfferRequest?did={{wallet_did_encoded}}",
+              "protocol": "http",
+              "host": [
+                "{{wallet_host}}"
+              ],
+              "path": [
+                "wallet-api",
+                "wallet",
+                "{{wallet_id}}",
+                "exchange",
+                "useOfferRequest"
+              ],
+              "query": [
+                {
+                  "key": "did",
+                  "value": "{{wallet_did_encoded}}"
+                }
+              ]
+            },
+            "description": "Accept the credential offer and receive a verifiable credential in the wallet"
+          },
+          "response": []
+        }
+      ],
+      "description": "This folder contains all the requests needed to issue a verifiable credential, starting with user registration. It begins with signup, then proceeds with generating a credential offer and ends with accepting the credential into a wallet."
+    },
+    {
+      "name": "2. Full Verification Workflow",
+      "description": "Complete workflow for verifying a previously issued credential",
+      "item": [
+        {
+          "name": "2.1 Generate Presentation Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Store the presentation request URL",
+                  "var responseBody = pm.response.text();",
+                  "if (responseBody) {",
+                  "    pm.collectionVariables.set(\"presentation_request_url\", responseBody);",
+                  "    ",
+                  "    // Extract the state parameter (session ID)",
+                  "    var stateMatch = responseBody.match(/state=([^&]*)/);",
+                  "    if (stateMatch && stateMatch.length > 1) {",
+                  "        pm.collectionVariables.set(\"verification_session_id\", stateMatch[1]);",
+                  "        console.log(\"Extracted verification session ID: \" + stateMatch[1]);",
+                  "    }",
+                  "    ",
+                  "    console.log(\"Generated presentation request URL\");",
+                  "    ",
+                  "    pm.test(\"Presentation request generated successfully\", function() {",
+                  "        pm.expect(responseBody).to.include('openid4vp://authorize');",
+                  "    });",
+                  "    ",
+                  "    // Set a flag to indicate we have the presentation request",
+                  "    pm.collectionVariables.set(\"verification_step\", \"request_generated\");",
+                  "} else {",
+                  "    console.log(\"Failed to generate presentation request!\");",
+                  "    pm.test(\"Presentation request generation failed\", function() {",
+                  "        pm.expect.fail(\"No presentation request URL received\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if issuance was completed before starting verification",
+                  "const issuanceStatus = pm.collectionVariables.get(\"issuance_step\");",
+                  "if (issuanceStatus !== \"credential_received\") {",
+                  "    console.log(\"Warning: Credential issuance flow may not be complete. Verification may fail.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "authorizeBaseUrl",
+                "value": "openid4vp://authorize"
+              },
+              {
+                "key": "responseMode",
+                "value": "direct_post"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"request_credentials\": [\n    {\n      \"type\": \"OpenBadgeCredential\",\n      \"format\": \"jwt_vc_json\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{verifier_host}}/openid4vc/verify",
+              "protocol": "http",
+              "host": [
+                "{{verifier_host}}"
+              ],
+              "path": [
+                "openid4vc",
+                "verify"
+              ]
+            },
+            "description": "Generate a presentation request URL that will be used to verify credentials"
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 Resolve Presentation Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Store the resolved presentation request URL",
+                  "var responseBody = pm.response.text();",
+                  "if (responseBody) {",
+                  "    pm.collectionVariables.set(\"resolved_presentation_request_url\", responseBody);",
+                  "    ",
+                  "    console.log(\"Resolved presentation request URL\");",
+                  "    ",
+                  "    pm.test(\"Presentation request resolved successfully\", function() {",
+                  "        pm.expect(responseBody).to.include('presentation_definition');",
+                  "    });",
+                  "    ",
+                  "    // Set a flag to indicate we have the resolved request",
+                  "    pm.collectionVariables.set(\"verification_step\", \"request_resolved\");",
+                  "} else {",
+                  "    console.log(\"Failed to resolve presentation request!\");",
+                  "    pm.test(\"Presentation request resolution failed\", function() {",
+                  "        pm.expect.fail(\"No resolved URL received\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if we have a presentation request before proceeding",
+                  "const requestStatus = pm.collectionVariables.get(\"verification_step\");",
+                  "if (requestStatus !== \"request_generated\") {",
+                  "    console.log(\"Warning: No presentation request generated yet. This request may fail.\");",
+                  "}",
+                  "",
+                  "// Ensure we have a presentation request URL",
+                  "const requestUrl = pm.collectionVariables.get(\"presentation_request_url\");",
+                  "if (!requestUrl) {",
+                  "    console.log(\"Error: No presentation request URL available. Please generate a request first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "text/plain"
+              },
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              },
+              {
+                "key": "authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{presentation_request_url}}",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{wallet_host}}/wallet-api/wallet/{{wallet_id}}/exchange/resolvePresentationRequest",
+              "protocol": "http",
+              "host": [
+                "{{wallet_host}}"
+              ],
+              "path": [
+                "wallet-api",
+                "wallet",
+                "{{wallet_id}}",
+                "exchange",
+                "resolvePresentationRequest"
+              ]
+            },
+            "description": "Resolve the presentation request to get the detailed presentation requirements"
+          },
+          "response": []
+        },
+        {
+          "name": "2.3 Share Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var responseBody = pm.response.text();",
+                  "try {",
+                  "    var jsonData = JSON.parse(responseBody);",
+                  "    ",
+                  "    // Check if we have a successful response",
+                  "    if (jsonData && jsonData.redirectUri !== undefined) {",
+                  "        console.log(\"Credentials shared successfully\");",
+                  "        ",
+                  "        pm.test(\"Credentials shared successfully\", function() {",
+                  "            pm.response.to.have.status(200);",
+                  "        });",
+                  "        ",
+                  "        // Set a flag to indicate successful sharing",
+                  "        pm.collectionVariables.set(\"verification_step\", \"credentials_shared\");",
+                  "    } else {",
+                  "        console.log(\"Unexpected response format!\");",
+                  "        pm.test(\"Unexpected response format\", function() {",
+                  "            pm.expect.fail(\"Response format is not as expected\");",
+                  "        });",
+                  "    }",
+                  "} catch(e) {",
+                  "    console.log(\"Error parsing response: \" + e);",
+                  "    pm.test(\"Error parsing response\", function() {",
+                  "        pm.expect.fail(\"Could not parse response as JSON: \" + e);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if we have a resolved request before proceeding",
+                  "const resolvedStatus = pm.collectionVariables.get(\"verification_step\");",
+                  "if (resolvedStatus !== \"request_resolved\") {",
+                  "    console.log(\"Warning: No resolved presentation request yet. This request may fail.\");",
+                  "}",
+                  "",
+                  "// Set a small delay to ensure all systems are ready",
+                  "setTimeout(function(){}, 1000);",
+                  "",
+                  "// Ensure we have all required parameters",
+                  "const resolvedUrl = pm.collectionVariables.get(\"resolved_presentation_request_url\");",
+                  "const did = pm.collectionVariables.get(\"wallet_did\");",
+                  "const credentialId = pm.collectionVariables.get(\"credential_id\");",
+                  "if (!resolvedUrl || !did || !credentialId) {",
+                  "    console.log(\"Error: Missing required parameters for sharing credentials.\");",
+                  "    console.log(\"Resolved URL: \" + (resolvedUrl ? \"Present\" : \"Missing\"));",
+                  "    console.log(\"DID: \" + (did ? \"Present\" : \"Missing\"));",
+                  "    console.log(\"Credential ID: \" + (credentialId ? \"Present\" : \"Missing\"));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"did\": \"{{wallet_did}}\",\n  \"presentationRequest\": \"{{resolved_presentation_request_url}}\",\n  \"selectedCredentials\": [\n    \"{{credential_id}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{wallet_host}}/wallet-api/wallet/{{wallet_id}}/exchange/usePresentationRequest",
+              "protocol": "http",
+              "host": [
+                "{{wallet_host}}"
+              ],
+              "path": [
+                "wallet-api",
+                "wallet",
+                "{{wallet_id}}",
+                "exchange",
+                "usePresentationRequest"
+              ]
+            },
+            "description": "Share the selected credential in response to the presentation request"
+          },
+          "response": []
+        },
+        {
+          "name": "2.4 Check Verification Result",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "try {",
+                  "    var jsonData = pm.response.json();",
+                  "    ",
+                  "    // Check if verification was successful",
+                  "    if (jsonData && jsonData.verificationResult === true) {",
+                  "        console.log(\"Verification successful\");",
+                  "        ",
+                  "        pm.test(\"Credential verified successfully\", function() {",
+                  "            pm.expect(jsonData.verificationResult).to.be.true;",
+                  "        });",
+                  "        ",
+                  "        // Set a flag to indicate successful verification",
+                  "        pm.collectionVariables.set(\"verification_step\", \"verification_completed\");",
+                  "    } else {",
+                  "        console.log(\"Verification failed or unexpected response\");",
+                  "        pm.test(\"Verification failed\", function() {",
+                  "            pm.expect.fail(\"Verification result was not successful\");",
+                  "        });",
+                  "    }",
+                  "} catch(e) {",
+                  "    console.log(\"Error parsing verification result: \" + e);",
+                  "    pm.test(\"Error parsing verification result\", function() {",
+                  "        pm.expect.fail(\"Could not parse response as JSON: \" + e);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if credentials were shared before checking verification",
+                  "const sharedStatus = pm.collectionVariables.get(\"verification_step\");",
+                  "if (sharedStatus !== \"credentials_shared\") {",
+                  "    console.log(\"Warning: Credentials may not have been shared yet. This request may not show results.\");",
+                  "}",
+                  "",
+                  "// Add a small delay to ensure verification has completed",
+                  "setTimeout(function(){}, 2000);",
+                  "",
+                  "// Ensure we have a session ID",
+                  "const sessionId = pm.collectionVariables.get(\"verification_session_id\");",
+                  "if (!sessionId) {",
+                  "    console.log(\"Error: No verification session ID available. Cannot check verification results.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "http://{{verifier_host}}/openid4vc/session/{{verification_session_id}}",
+              "protocol": "http",
+              "host": [
+                "{{verifier_host}}"
+              ],
+              "path": [
+                "openid4vc",
+                "session",
+                "{{verification_session_id}}"
+              ]
+            },
+            "description": "Check the verification result to confirm the credential was successfully verified"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Utility Requests",
+      "description": "Additional utility requests for checking system status and available configurations",
+      "item": [
+        {
+          "name": "Check Issuer Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{issuer_host}}/livez",
+              "protocol": "http",
+              "host": [
+                "{{issuer_host}}"
+              ],
+              "path": [
+                "livez"
+              ]
+            },
+            "description": "Check if the issuer service is running properly"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Wallet Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{wallet_host}}/livez",
+              "protocol": "http",
+              "host": [
+                "{{wallet_host}}"
+              ],
+              "path": [
+                "livez"
+              ]
+            },
+            "description": "Check if the wallet service is running properly"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Verifier Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{verifier_host}}/livez",
+              "protocol": "http",
+              "host": [
+                "{{verifier_host}}"
+              ],
+              "path": [
+                "livez"
+              ]
+            },
+            "description": "Check if the verifier service is running properly"
+          },
+          "response": []
+        },
+        {
+          "name": "List Issuer Features",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://{{issuer_host}}/features/registered",
+              "protocol": "http",
+              "host": [
+                "{{issuer_host}}"
+              ],
+              "path": [
+                "features",
+                "registered"
+              ]
+            },
+            "description": "List available issuer features"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "console.log(\"Running request: \" + pm.info.requestName);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "console.log(\"Completed request: \" + pm.info.requestName);",
+          "",
+          "// Generic error handling",
+          "if (pm.response.code >= 400) {",
+          "    console.log(\"Request failed with status: \" + pm.response.code);",
+          "    console.log(\"Response: \" + pm.response.text());",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "wallet_host",
+      "value": "139.59.15.151:7001",
+      "type": "string"
+    },
+    {
+      "key": "issuer_host",
+      "value": "139.59.15.151:7002",
+      "type": "string"
+    },
+    {
+      "key": "verifier_host",
+      "value": "139.59.15.151:7003",
+      "type": "string"
+    },
+    {
+      "key": "new_user_name",
+      "value": "Johnstone Kamau",
+      "type": "string",
+      "description": "Full name for the new user account (change as needed)"
+    },
+    {
+      "key": "new_user_email",
+      "value": "johnstone.kamau@email.com",
+      "type": "string",
+      "description": "Email address for the new user account"
+    },
+    {
+      "key": "new_user_password",
+      "value": "SecurePassword123!",
+      "type": "string",
+      "description": "Password for the new user account"
+    },
+    {
+      "key": "wallet_email",
+      "value": "user@email.com",
+      "type": "string",
+      "description": "(Legacy) Original wallet email - not used when new_user_email is set"
+    },
+    {
+      "key": "wallet_password",
+      "value": "password",
+      "type": "string",
+      "description": "(Legacy) Original wallet password - not used when new_user_password is set"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "account_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "wallet_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "wallet_did",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "wallet_did_encoded",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "credential_offer_url",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "credential_offer_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "credential_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "credential_jwt",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "presentation_request_url",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "resolved_presentation_request_url",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "verification_session_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "issuance_step",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "verification_step",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registration_completed",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "server_ip",
+      "value": "139.59.15.151",
+      "type": "string",
+      "description": "Your server IP address (can be used to override default hosts)"
+    }
+  ]
+}
