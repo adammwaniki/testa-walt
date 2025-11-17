@@ -485,7 +485,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "7115"
+		port = "7105"
 	}
 
 	service := NewCredentialService()
