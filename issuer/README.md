@@ -1,19 +1,15 @@
-# Testa-Walt
+# Testa Gava
 
 Production-ready Go + HTMX web application for issuing W3C Verifiable Credentials with full A1 Portable Document support.
 
-## Issuer
-
-### Testa Gava
-
-#### Architecural Overview
+## Architecural Overview
 
 - **Modular Structure**: Separated handlers, models, and main server
 - **Dynamic Form**: Full web form for all credential fields
 - **Package Organization**: Clean Model-View-Controller (MVC)-like pattern
 - **Complete A1 Support**: All sections of Portable Document A1 with Selective Disclosure support
 
-#### Key Features
+### Key Features
 
 - **Dynamic Data Entry**: Web form captures all credential subject fields
 - **Selective Disclosure**: Complete SD-JWT configuration for all sections
@@ -40,7 +36,7 @@ issuer/
 └── README.md                  # This file
 ```
 
-### Quick Start
+## Quick Start
 
 ```bash
 # 1. Navigate to project
