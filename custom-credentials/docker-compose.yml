@@ -5,9 +5,9 @@ services:
       dockerfile: Dockerfile
     container_name: farmer-credential-service
     ports:
-      - "7105:7105"
+      - "7115:7115"
     environment:
-      - PORT=7105
+      - PORT=7115
       - HOST=0.0.0.0
       # Walt.id configuration (already hardcoded in the app, but can be overridden)
       # - WALTID_BASE_URL=http://139.59.15.151:7002
