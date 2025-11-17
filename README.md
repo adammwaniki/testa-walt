@@ -133,13 +133,15 @@ This implementation follows Centre for Digital Public Infrastructure best practi
 │  ┌──────────────┐      ┌──────────────┐      ┌──────────┐   │
 │  │ Testa Gava   │      │   Wallet     │      │  Testa   │   │
 │  │  (Issuer)    │──────│  (Holder)    │──────│  SACCO   │   │
-│  │  Port 8080   │      │  Port 7101   │      │(Verifier)│   │
+│  │  Port 8082   │      │  Port 7101   │      │(Verifier)│   │
+│  │              │      │              │      │Port 8081 │   │
 │  └──────┬───────┘      └──────────────┘      └────┬─────┘   │
 │         │                                         │         │
 │         │         Walt.id Services                │         │
 │  ┌──────▼─────────────────────────────────────────▼────┐    │
 │  │  Issuer API (7002)  │  Verifier API (7003)          │    │
 │  │  Wallet API (7001)  │  VC Repository (7103)         │    │
+│  │  Portal API (7102)  │                               │    │
 │  └─────────────────────────────────────────────────────┘    │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
