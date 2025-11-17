@@ -116,7 +116,7 @@ This implementation follows Centre for Digital Public Infrastructure best practi
 1. **Open Standards**: W3C VC, OpenID4VC, DID methods
 2. **Interoperability**: Works with any W3C-compliant wallet
 3. **Privacy by Design**: Selective disclosure, minimal data sharing
-4. **Inclusive Design**: USSD support, mobile-first UI
+4. **Inclusive Design**: Mobile-first UI
 5. **Modularity**: Built for local context while maintaining extensibility
 
 ---
