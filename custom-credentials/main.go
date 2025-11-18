@@ -108,20 +108,35 @@ type VCRepoCredential struct {
 
 // CredentialService handles credential operations
 type CredentialService struct {
-	client *http.Client
+	client              *http.Client
+	credentialsMap      map[string]VCRepoCredential
+	credentialTypeNames []string
+}
+
+// CredentialMapping represents the field mapping for a credential type
+type CredentialMapping struct {
+	ID          string                   `json:"id"`
+	Template    map[string]any   `json:"template"`
+	Mapping     map[string]any   `json:"mapping"`
+	ExampleData map[string]any   `json:"exampleData,omitempty"`
 }
 
 func NewCredentialService() *CredentialService {
-	return &CredentialService{
-		client: &http.Client{Timeout: 30 * time.Second},
+	service := &CredentialService{
+		client:         &http.Client{Timeout: 30 * time.Second},
+		credentialsMap: make(map[string]VCRepoCredential),
 	}
+	
+	// Initialize credentials
+	service.initializeCredentials()
+	
+	return service
 }
 
-// GetCredentialsList returns a list of available credentials
-func (s *CredentialService) getCredentialsList() []VCRepoCredential {
-	return []VCRepoCredential{
+func (s *CredentialService) initializeCredentials() {
+	credentials := []VCRepoCredential{
 		{
-			ID:          "dairy-farmer-credential",
+			ID:          "DairyFarmerCredential",
 			Name:        "Dairy Farmer Credential",
 			Description: "Verifiable credential for dairy farmers in Kenya - tracks cattle breeds, milk production, and farm operations",
 			Icon:        "🐄",
@@ -152,7 +167,7 @@ func (s *CredentialService) getCredentialsList() []VCRepoCredential {
 			},
 		},
 		{
-			ID:          "poultry-farmer-credential",
+			ID:          "PoultryFarmerCredential",
 			Name:        "Poultry Farmer Credential",
 			Description: "Verifiable credential for poultry farmers in Kenya - tracks bird population, housing, and production capacity",
 			Icon:        "🐔",
@@ -182,7 +197,7 @@ func (s *CredentialService) getCredentialsList() []VCRepoCredential {
 			},
 		},
 		{
-			ID:          "horticulture-farmer-credential",
+			ID:          "HorticultureFarmerCredential",
 			Name:        "Horticulture Farmer Credential",
 			Description: "Verifiable credential for horticulture farmers in Kenya - tracks crops, farming methods, and certifications",
 			Icon:        "🥬",
@@ -212,7 +227,7 @@ func (s *CredentialService) getCredentialsList() []VCRepoCredential {
 			},
 		},
 		{
-			ID:          "aquaculture-farmer-credential",
+			ID:          "AquacultureFarmerCredential",
 			Name:        "Aquaculture Farmer Credential",
 			Description: "Verifiable credential for aquaculture farmers in Kenya - tracks fish species, farming systems, and water management",
 			Icon:        "🐟",
@@ -242,18 +257,51 @@ func (s *CredentialService) getCredentialsList() []VCRepoCredential {
 			},
 		},
 	}
+	
+	// Build map and type names list
+	for _, cred := range credentials {
+		s.credentialsMap[cred.ID] = cred
+		s.credentialTypeNames = append(s.credentialTypeNames, cred.ID)
+	}
 }
 
-// GetVCRepoListHandler handles GET /api/list (VC Repo compatible)
+// GetVCRepoListHandler handles GET /api/list
+// Returns array of credential type names (matching VC Repository format)
 func (s *CredentialService) GetVCRepoListHandler(w http.ResponseWriter, r *http.Request) {
-	credentials := s.getCredentialsList()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(credentials)
+	json.NewEncoder(w).Encode(s.credentialTypeNames)
 }
 
-// GetVCRepoCredentialsHandler handles GET /api/credentials (VC Repo compatible)
+// GetVCByIDHandler handles GET /api/vc/{id}
+// Returns full credential object for a specific type
+func (s *CredentialService) GetVCByIDHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	credentialID := vars["id"]
+	
+	log.Printf("Fetching credential by ID: %s", credentialID)
+	
+	// Find the requested credential
+	if cred, found := s.credentialsMap[credentialID]; found {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(cred)
+		return
+	}
+	
+	// Not found
+	w.WriteHeader(http.StatusNotFound)
+	json.NewEncoder(w).Encode(map[string]string{
+		"error": fmt.Sprintf("Credential type '%s' not found", credentialID),
+	})
+}
+
+// GetVCRepoCredentialsHandler handles GET /api/credentials
+// Returns array of all credential objects (for backward compatibility)
 func (s *CredentialService) GetVCRepoCredentialsHandler(w http.ResponseWriter, r *http.Request) {
-	credentials := s.getCredentialsList()
+	credentials := make([]VCRepoCredential, 0, len(s.credentialsMap))
+	for _, cred := range s.credentialsMap {
+		credentials = append(credentials, cred)
+	}
+	
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(credentials)
 }
@@ -401,6 +449,222 @@ func (s *CredentialService) validateRequest(req *FarmerCredentialRequest) error 
 	}
 
 	return nil
+}
+
+// GetCredentialMappingHandler handles GET /api/mapping/{id}
+func (s *CredentialService) GetCredentialMappingHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	credentialID := vars["id"]
+	
+	log.Printf("Fetching credential mapping for ID: %s", credentialID)
+	
+	// Get the mapping for the requested credential type
+	mapping, err := s.getCredentialMapping(credentialID)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": fmt.Sprintf("Mapping for credential type '%s' not found", credentialID),
+		})
+		return
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(mapping)
+}
+
+// getCredentialMapping returns the field mapping for a credential type
+func (s *CredentialService) getCredentialMapping(credentialID string) (map[string]any, error) {
+	mappings := map[string]map[string]any{
+		"DairyFarmerCredential": {
+			"id": "DairyFarmerCredential",
+			"template": map[string]any{
+				"farmerType":   "$farmerType",
+				"firstName":    "$firstName",
+				"familyName":   "$familyName",
+				"phoneNumber":  "$phoneNumber",
+				"birthDate":    "$birthDate",
+				"county":       "$county",
+				"subCounty":    "$subCounty",
+				"farmSize": map[string]any{
+					"value": "$farmSizeValue",
+					"unit":  "$farmSizeUnit",
+				},
+				"dairySpecifics": map[string]any{
+					"cattleBreeds":  "$cattleBreeds",
+					"numberOfCattle": "$numberOfCattle",
+					"milkingCows":   "$milkingCows",
+					"averageDailyProduction": map[string]any{
+						"value": "$avgDailyProductionValue",
+						"unit":  "$avgDailyProductionUnit",
+					},
+					"kdbNumber": "$kdbNumber",
+				},
+			},
+			"exampleData": map[string]any{
+				"farmerType":             "dairy",
+				"firstName":              "John",
+				"familyName":             "Kamau",
+				"phoneNumber":            "+254712345678",
+				"birthDate":              "1985-06-15",
+				"county":                 "Nakuru",
+				"subCounty":              "Njoro",
+				"farmSizeValue":          5.5,
+				"farmSizeUnit":           "acres",
+				"cattleBreeds":           []string{"Friesian", "Ayrshire"},
+				"numberOfCattle":         15,
+				"milkingCows":            10,
+				"avgDailyProductionValue": 120,
+				"avgDailyProductionUnit":  "liters",
+				"kdbNumber":              "KDB-12345",
+			},
+		},
+		"PoultryFarmerCredential": {
+			"id": "PoultryFarmerCredential",
+			"template": map[string]any{
+				"farmerType":   "$farmerType",
+				"firstName":    "$firstName",
+				"familyName":   "$familyName",
+				"phoneNumber":  "$phoneNumber",
+				"birthDate":    "$birthDate",
+				"county":       "$county",
+				"subCounty":    "$subCounty",
+				"farmSize": map[string]any{
+					"value": "$farmSizeValue",
+					"unit":  "$farmSizeUnit",
+				},
+				"poultrySpecifics": map[string]any{
+					"farmingType":   "$farmingType",
+					"birdPopulation": "$birdPopulation",
+					"housingType":   "$housingType",
+					"productionCapacity": map[string]any{
+						"eggsPerDay":   "$eggsPerDay",
+						"meatPerCycle": "$meatPerCycle",
+					},
+					"biosecurityLevel":       "$biosecurityLevel",
+					"veterinaryRegistration": "$veterinaryRegistration",
+				},
+			},
+			"exampleData": map[string]any{
+				"farmerType":             "poultry",
+				"firstName":              "Mary",
+				"familyName":             "Wanjiku",
+				"phoneNumber":            "+254723456789",
+				"birthDate":              "1990-03-20",
+				"county":                 "Kiambu",
+				"subCounty":              "Limuru",
+				"farmSizeValue":          2,
+				"farmSizeUnit":           "acres",
+				"farmingType":            "layers",
+				"birdPopulation":         5000,
+				"housingType":            "deep-litter",
+				"eggsPerDay":             4000,
+				"meatPerCycle":           0,
+				"biosecurityLevel":       "high",
+				"veterinaryRegistration": "VET-KE-2024-001",
+			},
+		},
+		"HorticultureFarmerCredential": {
+			"id": "HorticultureFarmerCredential",
+			"template": map[string]any{
+				"farmerType":   "$farmerType",
+				"firstName":    "$firstName",
+				"familyName":   "$familyName",
+				"phoneNumber":  "$phoneNumber",
+				"birthDate":    "$birthDate",
+				"county":       "$county",
+				"subCounty":    "$subCounty",
+				"farmSize": map[string]any{
+					"value": "$farmSizeValue",
+					"unit":  "$farmSizeUnit",
+				},
+				"horticultureSpecifics": map[string]any{
+					"crops":            "$crops",
+					"farmingMethod":    "$farmingMethod",
+					"greenhouseCount":  "$greenhouseCount",
+					"irrigationSystem": "$irrigationSystem",
+					"certifications":   "$certifications",
+					"exportMarket":     "$exportMarket",
+					"hcdNumber":        "$hcdNumber",
+				},
+			},
+			"exampleData": map[string]any{
+				"farmerType":      "horticulture",
+				"firstName":       "Peter",
+				"familyName":      "Ochieng",
+				"phoneNumber":     "+254734567890",
+				"birthDate":       "1988-09-10",
+				"county":          "Nairobi",
+				"subCounty":       "Kasarani",
+				"farmSizeValue":   3,
+				"farmSizeUnit":    "acres",
+				"crops":           []string{"Tomatoes", "Capsicum", "French Beans"},
+				"farmingMethod":   "greenhouse",
+				"greenhouseCount": 4,
+				"irrigationSystem": "drip-irrigation",
+				"certifications":  []string{"GlobalGAP", "Organic"},
+				"exportMarket":    true,
+				"hcdNumber":       "HCD-2024-789",
+			},
+		},
+		"AquacultureFarmerCredential": {
+			"id": "AquacultureFarmerCredential",
+			"template": map[string]any{
+				"farmerType":   "$farmerType",
+				"firstName":    "$firstName",
+				"familyName":   "$familyName",
+				"phoneNumber":  "$phoneNumber",
+				"birthDate":    "$birthDate",
+				"county":       "$county",
+				"subCounty":    "$subCounty",
+				"farmSize": map[string]any{
+					"value": "$farmSizeValue",
+					"unit":  "$farmSizeUnit",
+				},
+				"aquacultureSpecifics": map[string]any{
+					"species":       "$species",
+					"farmingSystem": "$farmingSystem",
+					"numberOfPonds": "$numberOfPonds",
+					"waterSource":   "$waterSource",
+					"productionCycle": map[string]any{
+						"cyclesPerYear": "$cyclesPerYear",
+						"fishPerCycle":  "$fishPerCycle",
+						"kgPerCycle":    "$kgPerCycle",
+					},
+					"feedingType":            "$feedingType",
+					"fishDepartmentPermit":   "$fishDepartmentPermit",
+					"waterQualityManagement": "$waterQualityManagement",
+				},
+			},
+			"exampleData": map[string]any{
+				"farmerType":            "aquaculture",
+				"firstName":             "James",
+				"familyName":            "Mwangi",
+				"phoneNumber":           "+254745678901",
+				"birthDate":             "1982-11-25",
+				"county":                "Kirinyaga",
+				"subCounty":             "Mwea",
+				"farmSizeValue":         4,
+				"farmSizeUnit":          "acres",
+				"species":               []string{"Tilapia", "Catfish"},
+				"farmingSystem":         "earthen-ponds",
+				"numberOfPonds":         8,
+				"waterSource":           "borehole",
+				"cyclesPerYear":         3,
+				"fishPerCycle":          5000,
+				"kgPerCycle":            1500,
+				"feedingType":           "commercial-pellets",
+				"fishDepartmentPermit":  "FD-2024-456",
+				"waterQualityManagement": true,
+			},
+		},
+	}
+	
+	mapping, ok := mappings[credentialID]
+	if !ok {
+		return nil, fmt.Errorf("mapping not found for credential type: %s", credentialID)
+	}
+	
+	return mapping, nil
 }
 
 // buildCredential constructs the W3C credential
@@ -606,7 +870,7 @@ func respondSuccess(w http.ResponseWriter, code int, data any) {
 	})
 }
 
-// CORS middleware with enhanced configuration - FIXED FOR WEB PORTAL
+// CORS middleware with enhanced configuration
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
@@ -658,13 +922,15 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]string{
 			"status":  "healthy",
 			"service": "farmer-credential-service",
-			"version": "1.0.1",
+			"version": "1.0.2",
 		})
 	}).Methods("GET", "OPTIONS")
 
-	// VC Repository compatible endpoints
+	// VC Repository compatible endpoints (MATCHING EXACT API FORMAT)
 	r.HandleFunc("/api/list", service.GetVCRepoListHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/vc/{id}", service.GetVCByIDHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/credentials", service.GetVCRepoCredentialsHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/mapping/{id}", service.GetCredentialMappingHandler).Methods("GET", "OPTIONS")
 
 	// Original credential endpoints (kept for backward compatibility)
 	r.HandleFunc("/credentials/issue", service.IssueCredentialHandler).Methods("POST", "OPTIONS")
@@ -683,16 +949,15 @@ func main() {
 	}
 
 	log.Printf("Farmer Credential Service")
-	log.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Printf("Starting on %s:%s", host, port)
 	log.Printf("Health: http://localhost:%s/health", port)
 	log.Printf("VC Repo API (List): GET http://localhost:%s/api/list", port)
-	log.Printf("VC Repo API (Credentials): GET http://localhost:%s/api/credentials", port)
+	log.Printf("VC Repo API (By ID): GET http://localhost:%s/api/vc/{id}", port)
+	log.Printf("VC Repo API (All): GET http://localhost:%s/api/credentials", port)
 	log.Printf("Issue: POST http://localhost:%s/credentials/issue", port)
 	log.Printf("Verify: POST http://localhost:%s/credentials/verify", port)
 	log.Printf("Types: GET http://localhost:%s/credentials/types", port)
 	log.Printf("Schema: GET http://localhost:%s/credentials/schemas/{type}", port)
-	log.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Printf("CORS enabled for web portal access")
 	log.Printf("Accessible from network on http://<your-ip>:%s", port)
 
