@@ -94,6 +94,18 @@ type AquaProduction struct {
 	KgPerCycle    float64 `json:"kgPerCycle"`
 }
 
+// VC Repository compatible structures
+type VCRepoCredential struct {
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Icon        string                 `json:"icon"`
+	Type        string                 `json:"type"`
+	Category    string                 `json:"category"`
+	Schema      map[string]any `json:"schema,omitempty"`
+	IssuerURL   string                 `json:"issuerUrl,omitempty"`
+}
+
 // CredentialService handles credential operations
 type CredentialService struct {
 	client *http.Client
@@ -103,6 +115,137 @@ func NewCredentialService() *CredentialService {
 	return &CredentialService{
 		client: &http.Client{Timeout: 30 * time.Second},
 	}
+}
+
+// GetVCRepoCredentialsHandler handles GET /api/credentials (VC Repo compatible)
+func (s *CredentialService) GetVCRepoCredentialsHandler(w http.ResponseWriter, r *http.Request) {
+	// Return farmer credentials in VC Repository format
+	credentials := []VCRepoCredential{
+		{
+			ID:          "dairy-farmer-credential",
+			Name:        "Dairy Farmer Credential",
+			Description: "Verifiable credential for dairy farmers in Kenya - tracks cattle breeds, milk production, and farm operations",
+			Icon:        "🐄",
+			Type:        "dairy",
+			Category:    "agriculture",
+			IssuerURL:   fmt.Sprintf("http://%s/credentials/issue", getServiceHost()),
+			Schema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"farmerType":   map[string]string{"type": "string", "const": "dairy"},
+					"firstName":    map[string]string{"type": "string"},
+					"familyName":   map[string]string{"type": "string"},
+					"phoneNumber":  map[string]string{"type": "string"},
+					"county":       map[string]string{"type": "string"},
+					"subCounty":    map[string]string{"type": "string"},
+					"dairySpecifics": map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"cattleBreeds":           map[string]string{"type": "array"},
+							"numberOfCattle":         map[string]string{"type": "integer"},
+							"milkingCows":            map[string]string{"type": "integer"},
+							"averageDailyProduction": map[string]string{"type": "object"},
+						},
+						"required": []string{"cattleBreeds", "numberOfCattle", "milkingCows"},
+					},
+				},
+				"required": []string{"farmerType", "firstName", "county", "dairySpecifics"},
+			},
+		},
+		{
+			ID:          "poultry-farmer-credential",
+			Name:        "Poultry Farmer Credential",
+			Description: "Verifiable credential for poultry farmers in Kenya - tracks bird population, housing, and production capacity",
+			Icon:        "🐔",
+			Type:        "poultry",
+			Category:    "agriculture",
+			IssuerURL:   fmt.Sprintf("http://%s/credentials/issue", getServiceHost()),
+			Schema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"farmerType":  map[string]string{"type": "string", "const": "poultry"},
+					"firstName":   map[string]string{"type": "string"},
+					"familyName":  map[string]string{"type": "string"},
+					"phoneNumber": map[string]string{"type": "string"},
+					"county":      map[string]string{"type": "string"},
+					"subCounty":   map[string]string{"type": "string"},
+					"poultrySpecifics": map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"farmingType":   map[string]string{"type": "string"},
+							"birdPopulation": map[string]string{"type": "integer"},
+							"housingType":   map[string]string{"type": "string"},
+						},
+						"required": []string{"farmingType", "birdPopulation", "housingType"},
+					},
+				},
+				"required": []string{"farmerType", "firstName", "county", "poultrySpecifics"},
+			},
+		},
+		{
+			ID:          "horticulture-farmer-credential",
+			Name:        "Horticulture Farmer Credential",
+			Description: "Verifiable credential for horticulture farmers in Kenya - tracks crops, farming methods, and certifications",
+			Icon:        "🥬",
+			Type:        "horticulture",
+			Category:    "agriculture",
+			IssuerURL:   fmt.Sprintf("http://%s/credentials/issue", getServiceHost()),
+			Schema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"farmerType":  map[string]string{"type": "string", "const": "horticulture"},
+					"firstName":   map[string]string{"type": "string"},
+					"familyName":  map[string]string{"type": "string"},
+					"phoneNumber": map[string]string{"type": "string"},
+					"county":      map[string]string{"type": "string"},
+					"subCounty":   map[string]string{"type": "string"},
+					"horticultureSpecifics": map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"crops":            map[string]string{"type": "array"},
+							"farmingMethod":    map[string]string{"type": "string"},
+							"irrigationSystem": map[string]string{"type": "string"},
+						},
+						"required": []string{"crops", "farmingMethod", "irrigationSystem"},
+					},
+				},
+				"required": []string{"farmerType", "firstName", "county", "horticultureSpecifics"},
+			},
+		},
+		{
+			ID:          "aquaculture-farmer-credential",
+			Name:        "Aquaculture Farmer Credential",
+			Description: "Verifiable credential for aquaculture farmers in Kenya - tracks fish species, farming systems, and water management",
+			Icon:        "🐟",
+			Type:        "aquaculture",
+			Category:    "agriculture",
+			IssuerURL:   fmt.Sprintf("http://%s/credentials/issue", getServiceHost()),
+			Schema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"farmerType":  map[string]string{"type": "string", "const": "aquaculture"},
+					"firstName":   map[string]string{"type": "string"},
+					"familyName":  map[string]string{"type": "string"},
+					"phoneNumber": map[string]string{"type": "string"},
+					"county":      map[string]string{"type": "string"},
+					"subCounty":   map[string]string{"type": "string"},
+					"aquacultureSpecifics": map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"species":       map[string]string{"type": "array"},
+							"farmingSystem": map[string]string{"type": "string"},
+							"waterSource":   map[string]string{"type": "string"},
+						},
+						"required": []string{"species", "farmingSystem", "waterSource"},
+					},
+				},
+				"required": []string{"farmerType", "firstName", "county", "aquacultureSpecifics"},
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(credentials)
 }
 
 // IssueCredentialHandler handles POST /credentials/issue
@@ -169,7 +312,7 @@ func (s *CredentialService) VerifyCredentialHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"verified": verified,
 		"result":   result,
 	}
@@ -180,7 +323,7 @@ func (s *CredentialService) VerifyCredentialHandler(w http.ResponseWriter, r *ht
 
 // ListCredentialTypesHandler handles GET /credentials/types
 func (s *CredentialService) ListCredentialTypesHandler(w http.ResponseWriter, r *http.Request) {
-	types := map[string]interface{}{
+	types := map[string]any{
 		"types": []map[string]string{
 			{
 				"type":        "dairy",
@@ -251,11 +394,11 @@ func (s *CredentialService) validateRequest(req *FarmerCredentialRequest) error 
 }
 
 // buildCredential constructs the W3C credential
-func (s *CredentialService) buildCredential(req *FarmerCredentialRequest) (map[string]interface{}, error) {
+func (s *CredentialService) buildCredential(req *FarmerCredentialRequest) (map[string]any, error) {
 	// Generate holder DID (in production, this comes from farmer's wallet)
 	holderDID := fmt.Sprintf("did:key:farmer_%d", time.Now().UnixNano())
 
-	credential := map[string]interface{}{
+	credential := map[string]any{
 		"@context": []string{
 			"https://www.w3.org/2018/credentials/v1",
 			"https://w3id.org/security/suites/jws-2020/v1",
@@ -263,7 +406,7 @@ func (s *CredentialService) buildCredential(req *FarmerCredentialRequest) (map[s
 		"type":         []string{"VerifiableCredential", "FarmerCredential", fmt.Sprintf("%sFarmerCredential", capitalize(req.FarmerType))},
 		"issuer":       IssuerDID,
 		"issuanceDate": time.Now().Format(time.RFC3339),
-		"credentialSubject": map[string]interface{}{
+		"credentialSubject": map[string]any{
 			"id":               holderDID,
 			"farmerType":       req.FarmerType,
 			"firstName":        req.FirstName,
@@ -278,7 +421,7 @@ func (s *CredentialService) buildCredential(req *FarmerCredentialRequest) (map[s
 	}
 
 	// Add type-specific data
-	subject := credential["credentialSubject"].(map[string]interface{})
+	subject := credential["credentialSubject"].(map[string]any)
 	switch req.FarmerType {
 	case "dairy":
 		subject["dairySpecifics"] = req.DairySpecifics
@@ -294,7 +437,7 @@ func (s *CredentialService) buildCredential(req *FarmerCredentialRequest) (map[s
 }
 
 // issueToWaltID sends credential to walt.id for signing
-func (s *CredentialService) issueToWaltID(credential map[string]interface{}) (map[string]interface{}, error) {
+func (s *CredentialService) issueToWaltID(credential map[string]any) (map[string]any, error) {
 	jsonData, err := json.Marshal(credential)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal credential: %w", err)
@@ -324,7 +467,7 @@ func (s *CredentialService) issueToWaltID(credential map[string]interface{}) (ma
 		return nil, fmt.Errorf("walt.id returned status %d: %s", resp.StatusCode, string(body))
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
@@ -333,7 +476,7 @@ func (s *CredentialService) issueToWaltID(credential map[string]interface{}) (ma
 }
 
 // verifyWithWaltID verifies a credential with walt.id
-func (s *CredentialService) verifyWithWaltID(credentialJWT string) (bool, map[string]interface{}, error) {
+func (s *CredentialService) verifyWithWaltID(credentialJWT string) (bool, map[string]any, error) {
 	url := fmt.Sprintf("%s/openid4vc/verify", WaltIDBaseURL)
 	req, err := http.NewRequest("POST", url, bytes.NewBufferString(credentialJWT))
 	if err != nil {
@@ -353,7 +496,7 @@ func (s *CredentialService) verifyWithWaltID(credentialJWT string) (bool, map[st
 		return false, nil, err
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 	if err := json.Unmarshal(body, &result); err != nil {
 		return false, nil, err
 	}
@@ -363,14 +506,14 @@ func (s *CredentialService) verifyWithWaltID(credentialJWT string) (bool, map[st
 }
 
 // getSchema returns the schema for a farmer type
-func (s *CredentialService) getSchema(farmerType string) (map[string]interface{}, error) {
+func (s *CredentialService) getSchema(farmerType string) (map[string]any, error) {
 	// This would load from files in production
-	schemas := map[string]map[string]interface{}{
+	schemas := map[string]map[string]any{
 		"dairy": {
 			"type":        "dairy",
 			"name":        "Dairy Farmer Credential",
 			"description": "Credential for dairy farmers in Kenya",
-			"fields": []map[string]interface{}{
+			"fields": []map[string]any{
 				{"name": "cattleBreeds", "type": "array", "required": true},
 				{"name": "numberOfCattle", "type": "integer", "required": true},
 				{"name": "milkingCows", "type": "integer", "required": true},
@@ -381,7 +524,7 @@ func (s *CredentialService) getSchema(farmerType string) (map[string]interface{}
 			"type":        "poultry",
 			"name":        "Poultry Farmer Credential",
 			"description": "Credential for poultry farmers in Kenya",
-			"fields": []map[string]interface{}{
+			"fields": []map[string]any{
 				{"name": "farmingType", "type": "string", "required": true},
 				{"name": "birdPopulation", "type": "integer", "required": true},
 				{"name": "housingType", "type": "string", "required": true},
@@ -391,7 +534,7 @@ func (s *CredentialService) getSchema(farmerType string) (map[string]interface{}
 			"type":        "horticulture",
 			"name":        "Horticulture Farmer Credential",
 			"description": "Credential for horticulture farmers in Kenya",
-			"fields": []map[string]interface{}{
+			"fields": []map[string]any{
 				{"name": "crops", "type": "array", "required": true},
 				{"name": "farmingMethod", "type": "string", "required": true},
 				{"name": "irrigationSystem", "type": "string", "required": true},
@@ -401,7 +544,7 @@ func (s *CredentialService) getSchema(farmerType string) (map[string]interface{}
 			"type":        "aquaculture",
 			"name":        "Aquaculture Farmer Credential",
 			"description": "Credential for aquaculture farmers in Kenya",
-			"fields": []map[string]interface{}{
+			"fields": []map[string]any{
 				{"name": "species", "type": "array", "required": true},
 				{"name": "farmingSystem", "type": "string", "required": true},
 				{"name": "waterSource", "type": "string", "required": true},
@@ -425,21 +568,29 @@ func capitalize(s string) string {
 	return string(s[0]-32) + s[1:]
 }
 
+func getServiceHost() string {
+	host := os.Getenv("SERVICE_HOST")
+	if host == "" {
+		host = "139.59.15.151:7105"
+	}
+	return host
+}
+
 func respondError(w http.ResponseWriter, code int, message string, err error) {
 	log.Printf("Error: %s - %v", message, err)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	json.NewEncoder(w).Encode(map[string]any{
 		"success": false,
 		"error":   message,
 		"details": err.Error(),
 	})
 }
 
-func respondSuccess(w http.ResponseWriter, code int, data interface{}) {
+func respondSuccess(w http.ResponseWriter, code int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	json.NewEncoder(w).Encode(map[string]any{
 		"success": true,
 		"data":    data,
 	})
@@ -501,7 +652,10 @@ func main() {
 		})
 	}).Methods("GET")
 
-	// Credential endpoints
+	// VC Repository compatible endpoint - THIS IS THE KEY ADDITION
+	r.HandleFunc("/api/credentials", service.GetVCRepoCredentialsHandler).Methods("GET")
+
+	// Original credential endpoints (kept for backward compatibility)
 	r.HandleFunc("/credentials/issue", service.IssueCredentialHandler).Methods("POST")
 	r.HandleFunc("/credentials/verify", service.VerifyCredentialHandler).Methods("POST")
 	r.HandleFunc("/credentials/types", service.ListCredentialTypesHandler).Methods("GET")
@@ -520,6 +674,7 @@ func main() {
 	log.Printf("Farmer Credential Service")
 	log.Printf("Starting on %s:%s", host, port)
 	log.Printf("Health: http://localhost:%s/health", port)
+	log.Printf("VC Repo API: GET http://localhost:%s/api/credentials", port)
 	log.Printf("Issue: POST http://localhost:%s/credentials/issue", port)
 	log.Printf("Verify: POST http://localhost:%s/credentials/verify", port)
 	log.Printf("Types: GET http://localhost:%s/credentials/types", port)
