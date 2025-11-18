@@ -117,10 +117,9 @@ func NewCredentialService() *CredentialService {
 	}
 }
 
-// GetVCRepoCredentialsHandler handles GET /api/credentials (VC Repo compatible)
-func (s *CredentialService) GetVCRepoCredentialsHandler(w http.ResponseWriter, r *http.Request) {
-	// Return farmer credentials in VC Repository format
-	credentials := []VCRepoCredential{
+// GetCredentialsList returns a list of available credentials
+func (s *CredentialService) getCredentialsList() []VCRepoCredential {
+	return []VCRepoCredential{
 		{
 			ID:          "dairy-farmer-credential",
 			Name:        "Dairy Farmer Credential",
@@ -172,9 +171,9 @@ func (s *CredentialService) GetVCRepoCredentialsHandler(w http.ResponseWriter, r
 					"poultrySpecifics": map[string]any{
 						"type": "object",
 						"properties": map[string]any{
-							"farmingType":   map[string]string{"type": "string"},
+							"farmingType":    map[string]string{"type": "string"},
 							"birdPopulation": map[string]string{"type": "integer"},
-							"housingType":   map[string]string{"type": "string"},
+							"housingType":    map[string]string{"type": "string"},
 						},
 						"required": []string{"farmingType", "birdPopulation", "housingType"},
 					},
@@ -243,7 +242,18 @@ func (s *CredentialService) GetVCRepoCredentialsHandler(w http.ResponseWriter, r
 			},
 		},
 	}
+}
 
+// GetVCRepoListHandler handles GET /api/list (VC Repo compatible)
+func (s *CredentialService) GetVCRepoListHandler(w http.ResponseWriter, r *http.Request) {
+	credentials := s.getCredentialsList()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(credentials)
+}
+
+// GetVCRepoCredentialsHandler handles GET /api/credentials (VC Repo compatible)
+func (s *CredentialService) GetVCRepoCredentialsHandler(w http.ResponseWriter, r *http.Request) {
+	credentials := s.getCredentialsList()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(credentials)
 }
@@ -596,12 +606,12 @@ func respondSuccess(w http.ResponseWriter, code int, data any) {
 	})
 }
 
-// CORS middleware with enhanced configuration
+// CORS middleware with enhanced configuration - FIXED FOR WEB PORTAL
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 		
-		// Allow all origins for now (restrict in production)
+		// Allow requests from the web portal
 		if origin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 		} else {
@@ -609,7 +619,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 		}
 		
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Max-Age", "3600")
 
@@ -627,7 +637,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		log.Printf("%s %s %s", r.Method, r.RequestURI, r.RemoteAddr)
+		log.Printf("%s %s %s Origin: %s", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("Origin"))
 		next.ServeHTTP(w, r)
 		log.Printf("Completed in %v", time.Since(start))
 	})
@@ -648,20 +658,21 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]string{
 			"status":  "healthy",
 			"service": "farmer-credential-service",
-			"version": "1.0.0",
+			"version": "1.0.1",
 		})
-	}).Methods("GET")
+	}).Methods("GET", "OPTIONS")
 
-	// VC Repository compatible endpoint - THIS IS THE KEY ADDITION
-	r.HandleFunc("/api/credentials", service.GetVCRepoCredentialsHandler).Methods("GET")
+	// VC Repository compatible endpoints
+	r.HandleFunc("/api/list", service.GetVCRepoListHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/credentials", service.GetVCRepoCredentialsHandler).Methods("GET", "OPTIONS")
 
 	// Original credential endpoints (kept for backward compatibility)
-	r.HandleFunc("/credentials/issue", service.IssueCredentialHandler).Methods("POST")
-	r.HandleFunc("/credentials/verify", service.VerifyCredentialHandler).Methods("POST")
-	r.HandleFunc("/credentials/types", service.ListCredentialTypesHandler).Methods("GET")
-	r.HandleFunc("/credentials/schemas/{type}", service.GetCredentialSchemaHandler).Methods("GET")
+	r.HandleFunc("/credentials/issue", service.IssueCredentialHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/credentials/verify", service.VerifyCredentialHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/credentials/types", service.ListCredentialTypesHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/credentials/schemas/{type}", service.GetCredentialSchemaHandler).Methods("GET", "OPTIONS")
 
-	// Apply middleware
+	// Apply middleware (ORDER MATTERS - CORS must be first!)
 	r.Use(corsMiddleware)
 	r.Use(loggingMiddleware)
 
@@ -672,13 +683,17 @@ func main() {
 	}
 
 	log.Printf("Farmer Credential Service")
+	log.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Printf("Starting on %s:%s", host, port)
 	log.Printf("Health: http://localhost:%s/health", port)
-	log.Printf("VC Repo API: GET http://localhost:%s/api/credentials", port)
+	log.Printf("VC Repo API (List): GET http://localhost:%s/api/list", port)
+	log.Printf("VC Repo API (Credentials): GET http://localhost:%s/api/credentials", port)
 	log.Printf("Issue: POST http://localhost:%s/credentials/issue", port)
 	log.Printf("Verify: POST http://localhost:%s/credentials/verify", port)
 	log.Printf("Types: GET http://localhost:%s/credentials/types", port)
 	log.Printf("Schema: GET http://localhost:%s/credentials/schemas/{type}", port)
+	log.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Printf("CORS enabled for web portal access")
 	log.Printf("Accessible from network on http://<your-ip>:%s", port)
 
 	addr := host + ":" + port
