@@ -482,6 +482,7 @@ func (s *CredentialService) getCredentialMapping(credentialID string) (map[strin
 				"type": "jwk",
 				"jwk": map[string]string{
 					"kty": "OKP",
+					"d":   "_HZh5CA0-qdpk7Uy1CM66ioMZB0z1-F3V08qe9FoP8I",  
 					"crv": "Ed25519",
 					"kid": "qFiT2AyuX6uAef49Q9C_EulTOuL4vqLmNe62GcP6Fpo",
 					"x":   "3eQHtxLYDPIkQOK82tHq-AZ-BUMA_u9_1J27IUz9MGg",
@@ -560,6 +561,7 @@ func (s *CredentialService) getCredentialMapping(credentialID string) (map[strin
 				"type": "jwk",
 				"jwk": map[string]string{
 					"kty": "OKP",
+					"d":   "_HZh5CA0-qdpk7Uy1CM66ioMZB0z1-F3V08qe9FoP8I",  
 					"crv": "Ed25519",
 					"kid": "qFiT2AyuX6uAef49Q9C_EulTOuL4vqLmNe62GcP6Fpo",
 					"x":   "3eQHtxLYDPIkQOK82tHq-AZ-BUMA_u9_1J27IUz9MGg",
@@ -640,6 +642,7 @@ func (s *CredentialService) getCredentialMapping(credentialID string) (map[strin
 				"type": "jwk",
 				"jwk": map[string]string{
 					"kty": "OKP",
+					"d":   "_HZh5CA0-qdpk7Uy1CM66ioMZB0z1-F3V08qe9FoP8I",  
 					"crv": "Ed25519",
 					"kid": "qFiT2AyuX6uAef49Q9C_EulTOuL4vqLmNe62GcP6Fpo",
 					"x":   "3eQHtxLYDPIkQOK82tHq-AZ-BUMA_u9_1J27IUz9MGg",
@@ -718,6 +721,7 @@ func (s *CredentialService) getCredentialMapping(credentialID string) (map[strin
 				"type": "jwk",
 				"jwk": map[string]string{
 					"kty": "OKP",
+					"d":   "_HZh5CA0-qdpk7Uy1CM66ioMZB0z1-F3V08qe9FoP8I",  
 					"crv": "Ed25519",
 					"kid": "qFiT2AyuX6uAef49Q9C_EulTOuL4vqLmNe62GcP6Fpo",
 					"x":   "3eQHtxLYDPIkQOK82tHq-AZ-BUMA_u9_1J27IUz9MGg",
