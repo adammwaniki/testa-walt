@@ -939,7 +939,594 @@
       ]
     },
     {
-      "name": "3. Utility Requests",
+      "name": "3. Farmer's Credential Workflow",
+      "description": "Complete workflow for issuing and verifying custom farmer credentials",
+      "item": [
+        {
+          "name": "3.1 Generate Farmer Credential Offer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse the response and extract the credential offer URL",
+                  "var responseBody = pm.response.text();",
+                  "",
+                  "// Save the full credential offer URL for farmer credential",
+                  "pm.collectionVariables.set(\"farmer_credential_offer_url\", responseBody);",
+                  "",
+                  "// Extract the credential offer ID for later reference",
+                  "var offerIdMatch = responseBody.match(/credentialOffer%3Fid%3D([^&]*)/);",
+                  "if (offerIdMatch && offerIdMatch.length > 1) {",
+                  "    pm.collectionVariables.set(\"farmer_credential_offer_id\", offerIdMatch[1]);",
+                  "    console.log(\"Extracted farmer credential offer ID: \" + offerIdMatch[1]);",
+                  "}",
+                  "",
+                  "console.log(\"Farmer credential offer URL saved: \" + responseBody);",
+                  "pm.test(\"Farmer credential offer URL generated successfully\", function() {",
+                  "    pm.response.to.not.be.error;",
+                  "    pm.expect(responseBody).to.include('openid-credential-offer');",
+                  "});",
+                  "",
+                  "// Set a flag to indicate we can proceed to the next step",
+                  "pm.collectionVariables.set(\"farmer_issuance_step\", \"offer_generated\");"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Set dynamic values in the request",
+                  "const timestamp = new Date().toISOString();",
+                  "const uuid = pm.variables.replaceIn('{{$guid}}');",
+                  "",
+                  "// Update the request body with dynamic values",
+                  "var body = JSON.parse(pm.request.body.raw);",
+                  "body.credentialData.id = `urn:uuid:${uuid}`;",
+                  "pm.request.body.raw = JSON.stringify(body, null, 2);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerKey\": {\n    \"type\": \"jwk\",\n    \"jwk\": {\n      \"kty\": \"OKP\",\n      \"d\": \"uX8gZ8UPrWQhzOFaA5gmmkfOiIGCE7w1zbRUh9v6xb8\",\n      \"crv\": \"Ed25519\",\n      \"kid\": \"ynzK6u55SjO6hFEsW0kBKon_bpvpf5zrr-Q3FNHeAVE\",\n      \"x\": \"e3CE1EOpYtE_6UyIN58UJwWmGGesV3kZHMVZABIQI3M\"\n    }\n  },\n  \"issuerDid\": \"did:jwk:eyJrdHkiOiJPS1AiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoieW56SzZ1NTVTak82aEZFc1cwa0JLb25fYnB2cGY1enJyLVEzRk5IZUFWRSIsIngiOiJlM0NFMUVPcFl0RV82VXlJTjU4VUp3V21HR2VzVjNrWkhNVlpBQklRSTNNIn0\",\n  \"credentialConfigurationId\": \"FarmerCredential_jwt_vc_json\",\n  \"credentialData\": {\n    \"@context\": [\n      \"https://www.w3.org/2018/credentials/v1\"\n    ],\n    \"id\": \"urn:uuid:WILL_BE_REPLACED_WITH_DYNAMIC_UUID\",\n    \"type\": [\n      \"VerifiableCredential\",\n      \"FarmerCredential\"\n    ],\n    \"issuer\": {\n      \"id\": \"did:jwk:eyJrdHkiOiJPS1AiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoieW56SzZ1NTVTak82aEZFc1cwa0JLb25fYnB2cGY1enJyLVEzRk5IZUFWRSIsIngiOiJlM0NFMUVPcFl0RV82VXlJTjU4VUp3V21HR2VzVjNrWkhNVlpBQklRSTNNIn0\",\n      \"name\": \"Testa Gava\"\n    },\n    \"credentialSubject\": {\n      \"given_name\": \"Alice\",\n      \"family_name\": \"Green\",\n      \"farm_name\": \"Green Acres\",\n      \"farm_type\": \"Dairy\",\n      \"license_no\": \"DAIRY-2023-8841\",\n      \"region\": \"Highlands\"\n    }\n  },\n  \"mapping\": {\n    \"id\": \"<uuid>\",\n    \"issuanceDate\": \"<timestamp>\",\n    \"expirationDate\": \"<timestamp-in:365d>\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{issuer_host}}/openid4vc/jwt/issue",
+              "protocol": "http",
+              "host": [
+                "{{issuer_host}}"
+              ],
+              "path": [
+                "openid4vc",
+                "jwt",
+                "issue"
+              ]
+            },
+            "description": "Generate a credential offer URL for a farmer credential with custom fields including farm details and license information"
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 Accept Farmer Credential Offer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "// Extract and store the farmer credential ID",
+                  "if (jsonData && jsonData.length > 0 && jsonData[0].id) {",
+                  "    pm.collectionVariables.set(\"farmer_credential_id\", jsonData[0].id);",
+                  "    ",
+                  "    // Also store the full credential JWT if available",
+                  "    if (jsonData[0].document) {",
+                  "        pm.collectionVariables.set(\"farmer_credential_jwt\", jsonData[0].document);",
+                  "    }",
+                  "    ",
+                  "    console.log(\"Received farmer credential with ID: \" + jsonData[0].id);",
+                  "    ",
+                  "    pm.test(\"Farmer credential accepted successfully\", function() {",
+                  "        pm.expect(jsonData[0].id).to.include('urn:uuid:');",
+                  "    });",
+                  "    ",
+                  "    // Set a flag to indicate completion of farmer credential issuance",
+                  "    pm.collectionVariables.set(\"farmer_issuance_step\", \"credential_received\");",
+                  "} else {",
+                  "    console.log(\"Failed to receive farmer credential!\");",
+                  "    pm.test(\"Farmer credential acceptance failed\", function() {",
+                  "        pm.expect.fail(\"No farmer credential received in response\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if we have a DID and credential offer before proceeding",
+                  "const offerStatus = pm.collectionVariables.get(\"farmer_issuance_step\");",
+                  "if (offerStatus !== \"offer_generated\") {",
+                  "    console.log(\"Warning: No farmer credential offer generated yet. This request may fail.\");",
+                  "}",
+                  "",
+                  "// Ensure we have a credential offer URL",
+                  "const offerUrl = pm.collectionVariables.get(\"farmer_credential_offer_url\");",
+                  "if (!offerUrl) {",
+                  "    console.log(\"Error: No farmer credential offer URL available. Please generate an offer first.\");",
+                  "}",
+                  "",
+                  "// Ensure we have a wallet DID (from previous workflows)",
+                  "const did = pm.collectionVariables.get(\"wallet_did\");",
+                  "if (!did) {",
+                  "    console.log(\"Error: No wallet DID available. Please run the full issuance workflow first to create a DID.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              },
+              {
+                "key": "authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{farmer_credential_offer_url}}",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{wallet_host}}/wallet-api/wallet/{{wallet_id}}/exchange/useOfferRequest?did={{wallet_did_encoded}}",
+              "protocol": "http",
+              "host": [
+                "{{wallet_host}}"
+              ],
+              "path": [
+                "wallet-api",
+                "wallet",
+                "{{wallet_id}}",
+                "exchange",
+                "useOfferRequest"
+              ],
+              "query": [
+                {
+                  "key": "did",
+                  "value": "{{wallet_did_encoded}}"
+                }
+              ]
+            },
+            "description": "Accept the farmer credential offer and receive it in the wallet"
+          },
+          "response": []
+        },
+        {
+          "name": "3.3 Generate Farmer Credential Verification Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Store the farmer credential presentation request URL",
+                  "var responseBody = pm.response.text();",
+                  "if (responseBody) {",
+                  "    pm.collectionVariables.set(\"farmer_presentation_request_url\", responseBody);",
+                  "    ",
+                  "    // Extract the state parameter (session ID)",
+                  "    var stateMatch = responseBody.match(/state=([^&]*)/);",
+                  "    if (stateMatch && stateMatch.length > 1) {",
+                  "        pm.collectionVariables.set(\"farmer_verification_session_id\", stateMatch[1]);",
+                  "        console.log(\"Extracted farmer verification session ID: \" + stateMatch[1]);",
+                  "    }",
+                  "    ",
+                  "    console.log(\"Generated farmer credential presentation request URL\");",
+                  "    ",
+                  "    pm.test(\"Farmer credential presentation request generated successfully\", function() {",
+                  "        pm.expect(responseBody).to.include('openid4vp://authorize');",
+                  "    });",
+                  "    ",
+                  "    // Set a flag to indicate we have the presentation request",
+                  "    pm.collectionVariables.set(\"farmer_verification_step\", \"request_generated\");",
+                  "} else {",
+                  "    console.log(\"Failed to generate farmer credential presentation request!\");",
+                  "    pm.test(\"Farmer credential presentation request generation failed\", function() {",
+                  "        pm.expect.fail(\"No presentation request URL received\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if farmer credential issuance was completed before starting verification",
+                  "const issuanceStatus = pm.collectionVariables.get(\"farmer_issuance_step\");",
+                  "if (issuanceStatus !== \"credential_received\") {",
+                  "    console.log(\"Warning: Farmer credential issuance flow may not be complete. Verification may fail.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "authorizeBaseUrl",
+                "value": "openid4vp://authorize"
+              },
+              {
+                "key": "responseMode",
+                "value": "direct_post"
+              },
+              {
+                "key": "successRedirectUri",
+                "value": "http://{{server_ip}}:7102/success/$id"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"request_credentials\": [\n    {\n      \"format\": \"jwt_vc_json\",\n      \"type\": \"FarmerCredential\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{verifier_host}}/openid4vc/verify",
+              "protocol": "http",
+              "host": [
+                "{{verifier_host}}"
+              ],
+              "path": [
+                "openid4vc",
+                "verify"
+              ]
+            },
+            "description": "Generate a presentation request URL specifically for verifying farmer credentials"
+          },
+          "response": []
+        },
+        {
+          "name": "3.4 Resolve Farmer Credential Presentation Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Store the resolved presentation request URL",
+                  "var responseBody = pm.response.text();",
+                  "if (responseBody) {",
+                  "    pm.collectionVariables.set(\"farmer_resolved_presentation_request_url\", responseBody);",
+                  "    ",
+                  "    console.log(\"Resolved farmer credential presentation request URL\");",
+                  "    ",
+                  "    pm.test(\"Farmer credential presentation request resolved successfully\", function() {",
+                  "        pm.expect(responseBody).to.include('presentation_definition');",
+                  "    });",
+                  "    ",
+                  "    // Set a flag to indicate we have the resolved request",
+                  "    pm.collectionVariables.set(\"farmer_verification_step\", \"request_resolved\");",
+                  "} else {",
+                  "    console.log(\"Failed to resolve farmer credential presentation request!\");",
+                  "    pm.test(\"Farmer credential presentation request resolution failed\", function() {",
+                  "        pm.expect.fail(\"No resolved URL received\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if we have a presentation request before proceeding",
+                  "const requestStatus = pm.collectionVariables.get(\"farmer_verification_step\");",
+                  "if (requestStatus !== \"request_generated\") {",
+                  "    console.log(\"Warning: No farmer credential presentation request generated yet. This request may fail.\");",
+                  "}",
+                  "",
+                  "// Ensure we have a presentation request URL",
+                  "const requestUrl = pm.collectionVariables.get(\"farmer_presentation_request_url\");",
+                  "if (!requestUrl) {",
+                  "    console.log(\"Error: No farmer credential presentation request URL available. Please generate a request first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "text/plain"
+              },
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              },
+              {
+                "key": "authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{farmer_presentation_request_url}}",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{wallet_host}}/wallet-api/wallet/{{wallet_id}}/exchange/resolvePresentationRequest",
+              "protocol": "http",
+              "host": [
+                "{{wallet_host}}"
+              ],
+              "path": [
+                "wallet-api",
+                "wallet",
+                "{{wallet_id}}",
+                "exchange",
+                "resolvePresentationRequest"
+              ]
+            },
+            "description": "Resolve the farmer credential presentation request to get the detailed presentation requirements"
+          },
+          "response": []
+        },
+        {
+          "name": "3.5 Share Farmer Credential",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var responseBody = pm.response.text();",
+                  "try {",
+                  "    var jsonData = JSON.parse(responseBody);",
+                  "    ",
+                  "    // Check if we have a successful response",
+                  "    if (jsonData && jsonData.redirectUri !== undefined) {",
+                  "        console.log(\"Farmer credential shared successfully\");",
+                  "        ",
+                  "        pm.test(\"Farmer credential shared successfully\", function() {",
+                  "            pm.response.to.have.status(200);",
+                  "        });",
+                  "        ",
+                  "        // Set a flag to indicate successful sharing",
+                  "        pm.collectionVariables.set(\"farmer_verification_step\", \"credentials_shared\");",
+                  "    } else {",
+                  "        console.log(\"Unexpected response format!\");",
+                  "        pm.test(\"Unexpected response format\", function() {",
+                  "            pm.expect.fail(\"Response format is not as expected\");",
+                  "        });",
+                  "    }",
+                  "} catch(e) {",
+                  "    console.log(\"Error parsing response: \" + e);",
+                  "    pm.test(\"Error parsing response\", function() {",
+                  "        pm.expect.fail(\"Could not parse response as JSON: \" + e);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if we have a resolved request before proceeding",
+                  "const resolvedStatus = pm.collectionVariables.get(\"farmer_verification_step\");",
+                  "if (resolvedStatus !== \"request_resolved\") {",
+                  "    console.log(\"Warning: No resolved farmer credential presentation request yet. This request may fail.\");",
+                  "}",
+                  "",
+                  "// Set a small delay to ensure all systems are ready",
+                  "setTimeout(function(){}, 1000);",
+                  "",
+                  "// Ensure we have all required parameters",
+                  "const resolvedUrl = pm.collectionVariables.get(\"farmer_resolved_presentation_request_url\");",
+                  "const did = pm.collectionVariables.get(\"wallet_did\");",
+                  "const credentialId = pm.collectionVariables.get(\"farmer_credential_id\");",
+                  "if (!resolvedUrl || !did || !credentialId) {",
+                  "    console.log(\"Error: Missing required parameters for sharing farmer credential.\");",
+                  "    console.log(\"Resolved URL: \" + (resolvedUrl ? \"Present\" : \"Missing\"));",
+                  "    console.log(\"DID: \" + (did ? \"Present\" : \"Missing\"));",
+                  "    console.log(\"Farmer Credential ID: \" + (credentialId ? \"Present\" : \"Missing\"));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"did\": \"{{wallet_did}}\",\n  \"presentationRequest\": \"{{farmer_resolved_presentation_request_url}}\",\n  \"selectedCredentials\": [\n    \"{{farmer_credential_id}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://{{wallet_host}}/wallet-api/wallet/{{wallet_id}}/exchange/usePresentationRequest",
+              "protocol": "http",
+              "host": [
+                "{{wallet_host}}"
+              ],
+              "path": [
+                "wallet-api",
+                "wallet",
+                "{{wallet_id}}",
+                "exchange",
+                "usePresentationRequest"
+              ]
+            },
+            "description": "Share the farmer credential in response to the presentation request"
+          },
+          "response": []
+        },
+        {
+          "name": "3.6 Check Farmer Credential Verification Result",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "try {",
+                  "    var jsonData = pm.response.json();",
+                  "    ",
+                  "    // Check if verification was successful",
+                  "    if (jsonData && jsonData.verificationResult === true) {",
+                  "        console.log(\"Farmer credential verification successful\");",
+                  "        ",
+                  "        pm.test(\"Farmer credential verified successfully\", function() {",
+                  "            pm.expect(jsonData.verificationResult).to.be.true;",
+                  "        });",
+                  "        ",
+                  "        // Set a flag to indicate successful verification",
+                  "        pm.collectionVariables.set(\"farmer_verification_step\", \"verification_completed\");",
+                  "    } else {",
+                  "        console.log(\"Farmer credential verification failed or unexpected response\");",
+                  "        pm.test(\"Farmer credential verification failed\", function() {",
+                  "            pm.expect.fail(\"Verification result was not successful\");",
+                  "        });",
+                  "    }",
+                  "} catch(e) {",
+                  "    console.log(\"Error parsing farmer credential verification result: \" + e);",
+                  "    pm.test(\"Error parsing farmer credential verification result\", function() {",
+                  "        pm.expect.fail(\"Could not parse response as JSON: \" + e);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if credentials were shared before checking verification",
+                  "const sharedStatus = pm.collectionVariables.get(\"farmer_verification_step\");",
+                  "if (sharedStatus !== \"credentials_shared\") {",
+                  "    console.log(\"Warning: Farmer credential may not have been shared yet. This request may not show results.\");",
+                  "}",
+                  "",
+                  "// Add a small delay to ensure verification has completed",
+                  "setTimeout(function(){}, 2000);",
+                  "",
+                  "// Ensure we have a session ID",
+                  "const sessionId = pm.collectionVariables.get(\"farmer_verification_session_id\");",
+                  "if (!sessionId) {",
+                  "    console.log(\"Error: No farmer credential verification session ID available. Cannot check verification results.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "http://{{verifier_host}}/openid4vc/session/{{farmer_verification_session_id}}",
+              "protocol": "http",
+              "host": [
+                "{{verifier_host}}"
+              ],
+              "path": [
+                "openid4vc",
+                "session",
+                "{{farmer_verification_session_id}}"
+              ]
+            },
+            "description": "Check the farmer credential verification result to confirm it was successfully verified"
+          },
+          "response": []
+        }
+      ],
+      "description": "Complete workflow for issuing and verifying custom farmer credentials with agricultural-specific fields"
+    },
+    {
+      "name": "4. Utility Requests",
       "description": "Additional utility requests for checking system status and available configurations",
       "item": [
         {
@@ -1181,6 +1768,60 @@
       "value": "139.59.15.151",
       "type": "string",
       "description": "Your server IP address (can be used to override default hosts)"
+    },
+    {
+      "key": "farmer_credential_offer_url",
+      "value": "",
+      "type": "string",
+      "description": "Farmer credential offer URL from the issuer"
+    },
+    {
+      "key": "farmer_credential_offer_id",
+      "value": "",
+      "type": "string",
+      "description": "Farmer credential offer ID extracted from the offer URL"
+    },
+    {
+      "key": "farmer_credential_id",
+      "value": "",
+      "type": "string",
+      "description": "Farmer credential ID after acceptance"
+    },
+    {
+      "key": "farmer_credential_jwt",
+      "value": "",
+      "type": "string",
+      "description": "Farmer credential JWT document"
+    },
+    {
+      "key": "farmer_presentation_request_url",
+      "value": "",
+      "type": "string",
+      "description": "Farmer credential presentation request URL"
+    },
+    {
+      "key": "farmer_resolved_presentation_request_url",
+      "value": "",
+      "type": "string",
+      "description": "Resolved farmer credential presentation request"
+    },
+    {
+      "key": "farmer_verification_session_id",
+      "value": "",
+      "type": "string",
+      "description": "Farmer credential verification session ID"
+    },
+    {
+      "key": "farmer_issuance_step",
+      "value": "",
+      "type": "string",
+      "description": "Current step in farmer credential issuance workflow"
+    },
+    {
+      "key": "farmer_verification_step",
+      "value": "",
+      "type": "string",
+      "description": "Current step in farmer credential verification workflow"
     }
   ]
 }
