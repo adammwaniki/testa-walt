@@ -2,14 +2,15 @@ package models
 
 // VerificationRequest represents the request to Walt.id verifier
 type VerificationRequest struct {
-	VcPolicies         []string            `json:"vc_policies"`
+	VcPolicies         []string            `json:"vc_policies,omitempty"`
 	RequestCredentials []RequestCredential `json:"request_credentials"`
 }
 
 // RequestCredential defines what credentials to verify
 type RequestCredential struct {
-	Format          string          `json:"format"`
-	InputDescriptor InputDescriptor `json:"input_descriptor"`
+	Format          string           `json:"format"`
+	Type            string           `json:"type,omitempty"`            // For simple requests like FarmerCredential
+	InputDescriptor *InputDescriptor `json:"input_descriptor,omitempty"` // For complex requests like PDA1
 }
 
 // InputDescriptor defines constraints for credential verification

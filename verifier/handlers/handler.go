@@ -67,6 +67,8 @@ func (h *Handler) VerifyCredential(w http.ResponseWriter, r *http.Request) {
 	// Build verification request
 	verifyRequest := h.buildVerificationRequest(options)
 
+	const SuccessRedirectURI = "http://139.59.15.151:7102/success/$id"
+
 	// Marshal request to JSON
 	requestBody, err := json.Marshal(verifyRequest)
 	if err != nil {
@@ -95,6 +97,7 @@ func (h *Handler) VerifyCredential(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Accept", "text/plain")
 	req.Header.Set("authorizeBaseUrl", "openid4vp://authorize")
 	req.Header.Set("responseMode", "direct_post")
+	req.Header.Set("successRedirectUri", SuccessRedirectURI)
 
 	// Send request
 	resp, err := client.Do(req)
@@ -141,7 +144,24 @@ func (h *Handler) extractVerificationOptions(r *http.Request) *models.Verificati
 
 // buildVerificationRequest builds the complete Walt.id verification request
 func (h *Handler) buildVerificationRequest(options *models.VerificationOptions) *models.VerificationRequest {
-	// Build policies array based on user selection
+	credentialType := options.CredentialType
+	if credentialType == "" {
+		credentialType = "VerifiablePortableDocumentA1"
+	}
+
+	// FarmerCredential uses simpler structure
+	if credentialType == "FarmerCredential" {
+		return &models.VerificationRequest{
+			RequestCredentials: []models.RequestCredential{
+				{
+					Format: "jwt_vc_json",
+					Type:   credentialType,
+				},
+			},
+		}
+	}
+
+	// Other credentials use the complex input_descriptor structure
 	policies := []string{}
 	
 	if options.CheckSignature {
@@ -157,15 +177,8 @@ func (h *Handler) buildVerificationRequest(options *models.VerificationOptions) 
 		policies = append(policies, "revoked-status-list")
 	}
 
-	// If no policies selected, use all by default
 	if len(policies) == 0 {
 		policies = []string{"signature", "expired", "not-before", "revoked-status-list"}
-	}
-
-	// Determine credential type (default to VerifiablePortableDocumentA1)
-	credentialType := options.CredentialType
-	if credentialType == "" {
-		credentialType = "VerifiablePortableDocumentA1"
 	}
 
 	return &models.VerificationRequest{
@@ -173,7 +186,7 @@ func (h *Handler) buildVerificationRequest(options *models.VerificationOptions) 
 		RequestCredentials: []models.RequestCredential{
 			{
 				Format: "jwt_vc",
-				InputDescriptor: models.InputDescriptor{
+				InputDescriptor: &models.InputDescriptor{
 					ID: "e3d700aa-0988-4eb6-b9c9-e00f4b27f1d8",
 					Constraints: models.Constraints{
 						Fields: []models.Field{
