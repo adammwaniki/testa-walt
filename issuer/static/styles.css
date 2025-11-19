@@ -124,6 +124,31 @@ h3 {
     font-size: 0.95em;
 }
 
+/* Credential Selection Cards */
+.credential-selection {
+    margin: 40px 0;
+}
+
+.credential-card {
+    padding: 30px;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.btn-card {
+    margin-top: 20px;
+    width: 100%;
+    padding: 14px 28px;
+    font-size: 1em;
+}
+
+.credential-card .benefit-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
 /* Action Section */
 .action-section {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -292,7 +317,7 @@ h3 {
     gap: 10px;
 }
 
-.link-display input {
+.link-display textarea {
     flex: 1;
     padding: 12px;
     border: 2px solid #28a745;
@@ -300,6 +325,8 @@ h3 {
     font-family: monospace;
     font-size: 0.9em;
     background: #f8f9fa;
+    resize: vertical;
+    min-height: 80px;
 }
 
 .copy-btn {
@@ -378,6 +405,112 @@ h3 {
     font-size: 0.95em;
 }
 
+/* Form Styles */
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 1em;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #27ae60;
+}
+
+.required {
+    color: #dc3545;
+}
+
+.form-group-header {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin: 30px 0 20px 0;
+}
+
+.form-group-header h3 {
+    margin: 0;
+    color: white;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.form-subgroup {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.form-subgroup h4 {
+    color: #27ae60;
+    margin-bottom: 15px;
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
 /* Footer */
 footer {
     background: #2c3e50;
@@ -424,6 +557,14 @@ footer {
     .btn-primary {
         padding: 15px 30px;
         font-size: 1.1em;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions button {
+        width: 100%;
     }
 }
 

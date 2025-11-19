@@ -34,7 +34,7 @@ func NewHandler(waltIDURL string) *Handler {
 	}
 }
 
-// Home renders the home page with the credential form
+// Home renders the home page with credential selection
 func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
@@ -48,7 +48,25 @@ func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// IssueCredential handles the credential issuance request
+// ShowPDA1Form renders the PDA1 credential form
+func (h *Handler) ShowPDA1Form(w http.ResponseWriter, r *http.Request) {
+	err := h.Templates.ExecuteTemplate(w, "pda1-form.html", nil)
+	if err != nil {
+		log.Printf("Error rendering PDA1 form: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+// ShowFarmerForm renders the Farmer credential form
+func (h *Handler) ShowFarmerForm(w http.ResponseWriter, r *http.Request) {
+	err := h.Templates.ExecuteTemplate(w, "farmer-form.html", nil)
+	if err != nil {
+		log.Printf("Error rendering Farmer form: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+// IssueCredential handles the PDA1 credential issuance request
 func (h *Handler) IssueCredential(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -120,7 +138,90 @@ func (h *Handler) IssueCredential(w http.ResponseWriter, r *http.Request) {
 	credentialLink := string(body)
 
 	// Render success response with HTMX
-	h.renderSuccess(w, credentialLink, farmer)
+	h.renderSuccess(w, credentialLink, farmer.Forenames+" "+farmer.Surname, "PDA1")
+}
+
+// IssueFarmerCredential handles the Farmer credential issuance request
+func (h *Handler) IssueFarmerCredential(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse form data
+	if err := r.ParseForm(); err != nil {
+		log.Printf("Error parsing form: %v", err)
+		h.renderError(w, "Failed to parse form data")
+		return
+	}
+
+	// Extract farmer credential data from form
+	farmerCred := &models.SimpleFarmerCredential{
+		GivenName:  r.FormValue("given_name"),
+		FamilyName: r.FormValue("family_name"),
+		FarmName:   r.FormValue("farm_name"),
+		FarmType:   r.FormValue("farm_type"),
+		LicenseNo:  r.FormValue("license_no"),
+		Region:     r.FormValue("region"),
+	}
+
+	// Build credential request
+	credRequest := h.buildFarmerCredentialRequest(farmerCred)
+
+	// Marshal request to JSON
+	requestBody, err := json.Marshal(credRequest)
+	if err != nil {
+		log.Printf("Error marshaling request: %v", err)
+		h.renderError(w, "Failed to create credential request")
+		return
+	}
+
+	// Create HTTP client with timeout
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	// Use the farmer credential endpoint
+	farmerURL := "http://139.59.15.151:7002/openid4vc/jwt/issue"
+	req, err := http.NewRequest("POST", farmerURL, bytes.NewBuffer(requestBody))
+	if err != nil {
+		log.Printf("Error creating request: %v", err)
+		h.renderError(w, "Failed to create request")
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	// Send request
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error sending request to Walt.id: %v", err)
+		h.renderError(w, "Failed to connect to credential service. Please try again.")
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error reading response: %v", err)
+		h.renderError(w, "Failed to read response")
+		return
+	}
+
+	// Check status code
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Walt.id returned status %d: %s", resp.StatusCode, string(body))
+		h.renderError(w, fmt.Sprintf("Credential service error: %s", string(body)))
+		return
+	}
+
+	// Response is the credential link
+	credentialLink := string(body)
+
+	// Render success response
+	h.renderSuccess(w, credentialLink, farmerCred.GivenName+" "+farmerCred.FamilyName, "Farmer")
 }
 
 // extractFarmerData extracts farmer information from the form
@@ -196,7 +297,7 @@ func (h *Handler) extractFarmerData(r *http.Request) *models.FarmerCredential {
 	}
 }
 
-// buildCredentialRequest builds the complete Walt.id credential request
+// buildCredentialRequest builds the complete Walt.id credential request for PDA1
 func (h *Handler) buildCredentialRequest(farmer *models.FarmerCredential) *models.CredentialRequest {
 	// Parse nationalities (comma-separated)
 	nationalities := []string{"BE"}
@@ -325,6 +426,46 @@ func (h *Handler) buildCredentialRequest(farmer *models.FarmerCredential) *model
 	}
 }
 
+// buildFarmerCredentialRequest builds the farmer credential request
+func (h *Handler) buildFarmerCredentialRequest(farmer *models.SimpleFarmerCredential) *models.SimpleFarmerCredentialRequest {
+	return &models.SimpleFarmerCredentialRequest{
+		IssuerKey: models.FarmerIssuerKey{
+			Type: "jwk",
+			JWK: models.FarmerJWK{
+				Kty: "OKP",
+				D:   "uX8gZ8UPrWQhzOFaA5gmmkfOiIGCE7w1zbRUh9v6xb8",
+				Crv: "Ed25519",
+				Kid: "ynzK6u55SjO6hFEsW0kBKon_bpvpf5zrr-Q3FNHeAVE",
+				X:   "e3CE1EOpYtE_6UyIN58UJwWmGGesV3kZHMVZABIQI3M",
+			},
+		},
+		IssuerDid:                 "did:jwk:eyJrdHkiOiJPS1AiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoieW56SzZ1NTVTak82aEZFc1cwa0JLb25fYnB2cGY1enJyLVEzRk5IZUFWRSIsIngiOiJlM0NFMUVPcFl0RV82VXlJTjU4VUp3V21HR2VzVjNrWkhNVlpBQklRSTNNIn0",
+		CredentialConfigurationID: "FarmerCredential_jwt_vc_json",
+		CredentialData: models.SimpleFarmerCredentialData{
+			Context: []string{"https://www.w3.org/2018/credentials/v1"},
+			ID:      "urn:uuid:{{$uuid}}",
+			Type:    []string{"VerifiableCredential", "FarmerCredential"},
+			Issuer: models.FarmerIssuer{
+				ID:   "did:jwk:eyJrdHkiOiJPS1AiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoieW56SzZ1NTVTak82aEZFc1cwa0JLb25fYnB2cGY1enJyLVEzRk5IZUFWRSIsIngiOiJlM0NFMUVPcFl0RV82VXlJTjU4VUp3V21HR2VzVjNrWkhNVlpBQklRSTNNIn0",
+				Name: "Testa Gava",
+			},
+			CredentialSubject: models.SimpleFarmerCredentialSubject{
+				GivenName:  farmer.GivenName,
+				FamilyName: farmer.FamilyName,
+				FarmName:   farmer.FarmName,
+				FarmType:   farmer.FarmType,
+				LicenseNo:  farmer.LicenseNo,
+				Region:     farmer.Region,
+			},
+		},
+		Mapping: models.SimpleFarmerMapping{
+			ID:             "<uuid>",
+			IssuanceDate:   "<timestamp>",
+			ExpirationDate: "<timestamp-in:365d>",
+		},
+	}
+}
+
 // buildSelectiveDisclosure creates the selective disclosure configuration
 func (h *Handler) buildSelectiveDisclosure() models.SelectiveDisclosureConfig {
 	return models.SelectiveDisclosureConfig{
@@ -400,15 +541,15 @@ func (h *Handler) createSDSection(fields map[string]bool) models.SDSection {
 }
 
 // renderSuccess renders the success message with the credential link
-func (h *Handler) renderSuccess(w http.ResponseWriter, credentialLink string, farmer *models.FarmerCredential) {
+func (h *Handler) renderSuccess(w http.ResponseWriter, credentialLink, name, credentialType string) {
 	w.Header().Set("Content-Type", "text/html")
 	html := fmt.Sprintf(`
 		<div id="result" class="success-message">
 			<div class="success-icon">
 				<i class="fa-solid fa-check" style="color: #28a745;"></i>
 			</div>
-			<h3>Digital ID Credential Generated!</h3>
-			<p>Credential issued for: <strong>%s %s</strong></p>
+			<h3>%s Credential Generated!</h3>
+			<p>Credential issued for: <strong>%s</strong></p>
 			
 			<div class="credential-link-container">
 				<label>Credential Link:</label>
@@ -428,7 +569,7 @@ func (h *Handler) renderSuccess(w http.ResponseWriter, credentialLink string, fa
 				</ol>
 			</div>
 			
-			<button onclick="location.reload()" class="btn-secondary">Issue Another Credential</button>
+			<button onclick="location.href='/'" class="btn-secondary">Issue Another Credential</button>
 		</div>
 
 		<script>
@@ -449,7 +590,7 @@ func (h *Handler) renderSuccess(w http.ResponseWriter, credentialLink string, fa
 			}, 2000);
 		}
 		</script>
-	`, farmer.Forenames, farmer.Surname, credentialLink)
+	`, credentialType, name, credentialLink)
 
 	w.Write([]byte(html))
 }
@@ -462,7 +603,7 @@ func (h *Handler) renderError(w http.ResponseWriter, message string) {
 			<div class="error-icon">✗</div>
 			<h3>Error</h3>
 			<p>%s</p>
-			<button onclick="location.reload()" class="btn-secondary">Try Again</button>
+			<button onclick="location.href='/'" class="btn-secondary">Try Again</button>
 		</div>
 	`, message)
 

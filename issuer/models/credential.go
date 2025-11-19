@@ -1,6 +1,6 @@
 package models
 
-// FarmerCredential represents a farmer's information for credential issuance
+// FarmerCredential represents a farmer's information for PDA1 credential issuance
 type FarmerCredential struct {
 	// Section 1: Personal Information
 	PersonalIdentificationNumber string `json:"personalIdentificationNumber"`
@@ -71,7 +71,73 @@ type FarmerCredential struct {
 	Signature           string `json:"signature"`
 }
 
-// CredentialRequest represents the request to Walt.id
+// SimpleFarmerCredential represents the simple farmer credential data
+type SimpleFarmerCredential struct {
+	GivenName  string `json:"given_name"`
+	FamilyName string `json:"family_name"`
+	FarmName   string `json:"farm_name"`
+	FarmType   string `json:"farm_type"`
+	LicenseNo  string `json:"license_no"`
+	Region     string `json:"region"`
+}
+
+// SimpleFarmerCredentialRequest represents the complete request for farmer credential
+type SimpleFarmerCredentialRequest struct {
+	IssuerKey                   FarmerIssuerKey           `json:"issuerKey"`
+	IssuerDid                   string                    `json:"issuerDid"`
+	CredentialConfigurationID   string                    `json:"credentialConfigurationId"`
+	CredentialData              SimpleFarmerCredentialData `json:"credentialData"`
+	Mapping                     SimpleFarmerMapping        `json:"mapping"`
+}
+
+// FarmerIssuerKey represents the issuer's cryptographic key for farmer credential
+type FarmerIssuerKey struct {
+	Type string     `json:"type"`
+	JWK  FarmerJWK  `json:"jwk"`
+}
+
+// FarmerJWK represents a JSON Web Key for farmer credential
+type FarmerJWK struct {
+	Kty string `json:"kty"`
+	D   string `json:"d"`
+	Crv string `json:"crv"`
+	Kid string `json:"kid"`
+	X   string `json:"x"`
+}
+
+// SimpleFarmerCredentialData holds the farmer credential structure
+type SimpleFarmerCredentialData struct {
+	Context           []string                      `json:"@context"`
+	ID                string                        `json:"id"`
+	Type              []string                      `json:"type"`
+	Issuer            FarmerIssuer                  `json:"issuer"`
+	CredentialSubject SimpleFarmerCredentialSubject `json:"credentialSubject"`
+}
+
+// FarmerIssuer represents the credential issuer
+type FarmerIssuer struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// SimpleFarmerCredentialSubject contains the farmer's credential data
+type SimpleFarmerCredentialSubject struct {
+	GivenName  string `json:"given_name"`
+	FamilyName string `json:"family_name"`
+	FarmName   string `json:"farm_name"`
+	FarmType   string `json:"farm_type"`
+	LicenseNo  string `json:"license_no"`
+	Region     string `json:"region"`
+}
+
+// SimpleFarmerMapping for dynamic field mapping
+type SimpleFarmerMapping struct {
+	ID             string `json:"id"`
+	IssuanceDate   string `json:"issuanceDate"`
+	ExpirationDate string `json:"expirationDate"`
+}
+
+// CredentialRequest represents the request to Walt.id for PDA1
 type CredentialRequest struct {
 	IssuerKey                   IssuerKey                 `json:"issuerKey"`
 	CredentialConfigurationID   string                    `json:"credentialConfigurationId"`

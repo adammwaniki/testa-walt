@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDA1 Credential - Testa Gava</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        .back-button {
+            display: inline-block;
+            margin: 10px 0;
+            padding: 8px 16px;
+            background: #6c757d;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .back-button:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-button" style="margin: 20px;">← Back to Selection</a>
+    
+    <div class="container">
+        <header>
+            <div class="logo">
+                <span class="logo-icon">
+                    <i class="fa-solid fa-id-card" style="color: #55e6baff;"></i>
+                </span>
+                <h1>PDA1 Credential Form</h1>
+            </div>
+            <p class="tagline">Portable Document A1 - Social Security Coordination</p>
+        </header>
+
+        <main>
+            <section class="form-section">
+                <form 
+                    id="credential-form"
+                    hx-post="/issue-credential"
+                    hx-target="#result"
+                    hx-swap="innerHTML"
+                    hx-indicator="#loading"
+                >
+                    <!-- Section 1: Personal Information -->
+                    <div class="form-group-header">
+                        <h3>Section 1: Personal Information</h3>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="personalId">Personal ID Number <span class="required">*</span></label>
+                            <input type="text" id="personalId" name="personalId" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sex">Sex <span class="required">*</span></label>
+                            <select id="sex" name="sex" required>
+                                <option value="">Select...</option>
+                                <option value="01">Male</option>
+                                <option value="02">Female</option>
+                                <option value="03">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="surname">Surname <span class="required">*</span></label>
+                            <input type="text" id="surname" name="surname" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="forenames">Forename(s) <span class="required">*</span></label>
+                            <input type="text" id="forenames" name="forenames" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dateOfBirth">Date of Birth <span class="required">*</span></label>
+                            <input type="date" id="dateOfBirth" name="dateOfBirth" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nationalities">Nationality (comma-separated)</label>
+                            <input type="text" id="nationalities" name="nationalities" placeholder="e.g., BE, FR">
+                        </div>
+                    </div>
+
+                    <!-- Residence Address -->
+                    <div class="form-subgroup">
+                        <h4>State of Residence Address</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="residenceStreet">Street & Number</label>
+                                <input type="text" id="residenceStreet" name="residenceStreet">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="residencePostCode">Post Code</label>
+                                <input type="text" id="residencePostCode" name="residencePostCode">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="residenceTown">Town/City</label>
+                                <input type="text" id="residenceTown" name="residenceTown">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="residenceCountry">Country Code</label>
+                                <input type="text" id="residenceCountry" name="residenceCountry" placeholder="e.g., BE" maxlength="2">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stay Address -->
+                    <div class="form-subgroup">
+                        <h4>State of Stay Address</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="stayStreet">Street & Number</label>
+                                <input type="text" id="stayStreet" name="stayStreet">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="stayPostCode">Post Code</label>
+                                <input type="text" id="stayPostCode" name="stayPostCode">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="stayTown">Town/City</label>
+                                <input type="text" id="stayTown" name="stayTown">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="stayCountry">Country Code</label>
+                                <input type="text" id="stayCountry" name="stayCountry" placeholder="e.g., BE" maxlength="2">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Legislation Information -->
+                    <div class="form-group-header">
+                        <h3>Section 2: Legislation Information</h3>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="memberState">Member State Legislation Applies</label>
+                            <input type="text" id="memberState" name="memberState" placeholder="e.g., DE" maxlength="2">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="startingDate">Starting Date</label>
+                            <input type="date" id="startingDate" name="startingDate">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="endingDate">Ending Date</label>
+                            <input type="date" id="endingDate" name="endingDate">
+                        </div>
+                    </div>
+
+                    <div class="form-row checkbox-group">
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="certificateDuration" name="certificateDuration">
+                            <label for="certificateDuration">Certificate for Duration of Activity</label>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="provisional" name="provisional">
+                            <label for="provisional">Determination Provisional</label>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="transitionRules" name="transitionRules">
+                            <label for="transitionRules">Transition Rules Apply (EC 883/2004)</label>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Activity Type -->
+                    <div class="form-group-header">
+                        <h3>Section 3: Activity Type</h3>
+                    </div>
+
+                    <div class="form-row checkbox-group">
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="postedEmployed" name="postedEmployed">
+                            <label for="postedEmployed">Posted Employed Person</label>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="employedMultiState" name="employedMultiState">
+                            <label for="employedMultiState">Employed in Two or More States</label>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="postedSelfEmployed" name="postedSelfEmployed">
+                            <label for="postedSelfEmployed">Posted Self-Employed Person</label>
+                        </div>
+                    </div>
+
+                    <div class="form-row checkbox-group">
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="selfEmployedMultiState" name="selfEmployedMultiState">
+                            <label for="selfEmployedMultiState">Self-Employed in Two or More States</label>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="civilServant" name="civilServant">
+                            <label for="civilServant">Civil Servant</label>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="contractStaff" name="contractStaff">
+                            <label for="contractStaff">Contract Staff</label>
+                        </div>
+                    </div>
+
+                    <div class="form-row checkbox-group">
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="mariner" name="mariner">
+                            <label for="mariner">Mariner</label>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="employedAndSelf" name="employedAndSelf">
+                            <label for="employedAndSelf">Employed and Self-Employed</label>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="civilAndEmployed" name="civilAndEmployed">
+                            <label for="civilAndEmployed">Civil and Employed/Self-Employed</label>
+                        </div>
+                    </div>
+
+                    <div class="form-row checkbox-group">
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="flightCrew" name="flightCrew">
+                            <label for="flightCrew">Flight Crew Member</label>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="exception" name="exception">
+                            <label for="exception">Exception</label>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="workingUnder21" name="workingUnder21">
+                            <label for="workingUnder21">Working in State Under 21</label>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="exceptionDesc">Exception Description (if applicable)</label>
+                            <textarea id="exceptionDesc" name="exceptionDesc" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Employer/Business Information -->
+                    <div class="form-group-header">
+                        <h3>Section 4: Employer/Business Information</h3>
+                    </div>
+
+                    <div class="form-row checkbox-group">
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="employee" name="employee">
+                            <label for="employee">Employee</label>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="selfEmployed" name="selfEmployed">
+                            <label for="selfEmployed">Self-Employed Activity</label>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="businessName">Business Name</label>
+                            <input type="text" id="businessName" name="businessName">
+                        </div>
+                    </div>
+
+                    <div class="form-subgroup">
+                        <h4>Registered Business Address</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="businessStreet">Street & Number</label>
+                                <input type="text" id="businessStreet" name="businessStreet">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="businessPostCode">Post Code</label>
+                                <input type="text" id="businessPostCode" name="businessPostCode">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="businessTown">Town/City</label>
+                                <input type="text" id="businessTown" name="businessTown">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="businessCountry">Country Code</label>
+                                <input type="text" id="businessCountry" name="businessCountry" placeholder="e.g., DE" maxlength="2">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 5: Work Location -->
+                    <div class="form-group-header">
+                        <h3>Section 5: Work Location</h3>
+                    </div>
+
+                    <div class="form-row checkbox-group">
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="noFixedAddress" name="noFixedAddress">
+                            <label for="noFixedAddress">No Fixed Address</label>
+                        </div>
+                    </div>
+
+                    <!-- Section 6: Issuing Institution -->
+                    <div class="form-group-header">
+                        <h3>Section 6: Issuing Institution</h3>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="institutionName">Institution Name</label>
+                            <input type="text" id="institutionName" name="institutionName" 
+                                   value="National Social Security Fund (NSSF)">
+                        </div>
+                    </div>
+
+                    <div class="form-subgroup">
+                        <h4>Institution Address</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="institutionStreet">Street & Number</label>
+                                <input type="text" id="institutionStreet" name="institutionStreet" 
+                                       value="Kanairo Street 21">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="institutionPostCode">Post Code</label>
+                                <input type="text" id="institutionPostCode" name="institutionPostCode" value="0100">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="institutionTown">Town/City</label>
+                                <input type="text" id="institutionTown" name="institutionTown" value="Kanairo">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="institutionCountry">Country Code</label>
+                                <input type="text" id="institutionCountry" name="institutionCountry" value="KE" maxlength="2">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="institutionId">Institution ID</label>
+                            <input type="text" id="institutionId" name="institutionId" value="NSSF/HEE/HEE">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="officePhone">Office Phone</label>
+                            <input type="tel" id="officePhone" name="officePhone" value="0712 12 234">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="officeFax">Office Fax (optional)</label>
+                            <input type="tel" id="officeFax" name="officeFax">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" value="info@nssf-heehee.go.ke">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="issueDate">Issue Date</label>
+                            <input type="date" id="issueDate" name="issueDate">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signature">Official Signature</label>
+                            <input type="text" id="signature" name="signature" value="Official signature">
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">
+                            Issue PDA1 Credential
+                        </button>
+                        <button type="reset" class="btn-secondary">Clear Form</button>
+                    </div>
+
+                    <div id="loading" class="htmx-indicator">
+                        <div class="spinner"></div>
+                        <p>Generating your credential...</p>
+                    </div>
+                </form>
+
+                <div id="result"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Testa Gava</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const issueDateField = document.getElementById('issueDate');
+            if (issueDateField && !issueDateField.value) {
+                const today = new Date().toISOString().split('T')[0];
+                issueDateField.value = today;
+            }
+        });
+    </script>
+</body>
+</html>
